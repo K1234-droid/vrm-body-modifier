@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [isAnimation, setIsAnimation] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoBlink, setAutoBlink] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
 
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('app_language');
@@ -296,6 +297,8 @@ const App: React.FC = () => {
           onPoseClipApplied={handlePoseClipApplied}
           isPlaying={isPlaying}
           autoBlink={autoBlink}
+          backgroundImage={backgroundImage}
+          setBackgroundImage={setBackgroundImage}
         />
 
         { }
@@ -317,6 +320,8 @@ const App: React.FC = () => {
         setLanguage={setLanguage}
         autoBlink={autoBlink}
         setAutoBlink={setAutoBlink}
+        backgroundImage={backgroundImage}
+        setBackgroundImage={setBackgroundImage}
       />
     </div>
   );

@@ -16,6 +16,8 @@ interface SidebarProps {
   setLanguage: (lang: Language) => void;
   autoBlink: boolean;
   setAutoBlink: (val: boolean) => void;
+  backgroundImage: string | null;
+  setBackgroundImage: (image: string | null) => void;
 }
 
 interface SliderGroupProps {
@@ -135,7 +137,7 @@ const EXPRESSIONS = [
   { label: 'Look Right', value: 'lookRight' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink }) => {
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage }) => {
   if (!isFileLoaded) {
     return null;
   }
@@ -156,24 +158,33 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         { }
         <div className="mb-4">
           <h4 className="sub-judul sub-judul-nomargin">{t.canvasView}</h4>
-          <div className="switch-container">
-            <label
-              className="switch-label cursor-pointer select-none"
-              onClick={onToggleDarkMode}
-              htmlFor="dark-mode-toggle"
+          {backgroundImage ? (
+            <button
+              onClick={() => setBackgroundImage(null)}
+              className="modal-save-btn w-full mt-2"
             >
-              {t.darkMode}
-            </label>
-            <label className="switch">
-              <input
-                type="checkbox"
-                id="dark-mode-toggle"
-                checked={isDarkMode}
-                onChange={onToggleDarkMode}
-              />
-              <span className="slider"></span>
-            </label>
-          </div>
+              {t.removeBackground}
+            </button>
+          ) : (
+            <div className="switch-container">
+              <label
+                className="switch-label cursor-pointer select-none"
+                onClick={onToggleDarkMode}
+                htmlFor="dark-mode-toggle"
+              >
+                {t.darkMode}
+              </label>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  id="dark-mode-toggle"
+                  checked={isDarkMode}
+                  onChange={onToggleDarkMode}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          )}
         </div>
 
         <SliderGroup title={t.groups.expression}>

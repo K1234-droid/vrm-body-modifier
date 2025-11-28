@@ -21,6 +21,8 @@ interface ThreeCanvasProps {
   onPoseClipApplied: () => void;
   isPlaying: boolean;
   autoBlink: boolean;
+  backgroundImage: string | null;
+  setBackgroundImage: (image: string | null) => void;
 }
 
 type PoseType = 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
@@ -37,7 +39,9 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   setCustomPoseTransforms,
   onPoseClipApplied,
   isPlaying,
-  autoBlink
+  autoBlink,
+  backgroundImage,
+  setBackgroundImage
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>(0);
@@ -51,6 +55,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isDarkModeRef = useRef(isDarkMode);
   const isPlayingRef = useRef(isPlaying);
@@ -216,20 +221,46 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   useEffect(() => {
     isDarkModeRef.current = isDarkMode;
     if (sceneRef.current) {
-      const bgColor = isDarkMode ? '#121212' : '#E0E0E0';
-      const gridColor1 = isDarkMode ? 0x444444 : 0x888888;
-      const gridColor2 = isDarkMode ? 0x222222 : 0xcccccc;
+      if (backgroundImage) {
+        const loader = new THREE.TextureLoader();
+        loader.load(backgroundImage, (texture) => {
+          if (sceneRef.current) {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            sceneRef.current.background = texture;
 
-      sceneRef.current.background = new THREE.Color(bgColor);
+            if (mountRef.current) {
+              const img = texture.image;
+              if (img) {
+                const w = mountRef.current.clientWidth;
+                const h = mountRef.current.clientHeight;
+                const canvasAspect = w / h;
+                const imageAspect = img.width / img.height;
+                const factor = imageAspect / canvasAspect;
+
+                texture.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+                texture.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+
+                texture.repeat.x = factor > 1 ? 1 / factor : 1;
+                texture.repeat.y = factor > 1 ? 1 : factor;
+              }
+            }
+          }
+        });
+      } else {
+        const bgColor = isDarkMode ? '#121212' : '#E0E0E0';
+        sceneRef.current.background = new THREE.Color(bgColor);
+      }
 
       const oldGrid = sceneRef.current.getObjectByName('GridHelper');
       if (oldGrid) sceneRef.current.remove(oldGrid);
 
+      const gridColor1 = isDarkMode ? 0x444444 : 0x888888;
+      const gridColor2 = isDarkMode ? 0x222222 : 0xcccccc;
       const newGrid = new THREE.GridHelper(10, 10, gridColor1, gridColor2);
       newGrid.name = 'GridHelper';
       sceneRef.current.add(newGrid);
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, backgroundImage]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -493,6 +524,19 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+
+      if (scene.background instanceof THREE.Texture && scene.background.image) {
+        const img = scene.background.image;
+        const canvasAspect = w / h;
+        const imageAspect = img.width / img.height;
+        const factor = imageAspect / canvasAspect;
+
+        scene.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+        scene.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+
+        scene.background.repeat.x = factor > 1 ? 1 / factor : 1;
+        scene.background.repeat.y = factor > 1 ? 1 : factor;
+      }
     };
 
     const resizeObserver = new ResizeObserver(() => handleResize());
@@ -1122,10 +1166,40 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
                 )}
               </button>
             )}
-            { }
+
             <div className="flex flex-col items-center gap-1">
               <button onClick={() => setCameraView('y')} className="gizmo-btn gizmo-btn-lg gizmo-btn-primary">Y</button>
-              <div className="flex gap-2">
+              <div className="flex gap-2 relative">
+                <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="gizmo-btn group"
+                    data-tooltip={t.image}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                    </svg>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          if (event.target?.result) {
+                            setBackgroundImage(event.target.result as string);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
                 <button onClick={() => setCameraView('x')} className="gizmo-btn gizmo-btn-lg">X</button>
                 <button onClick={() => setCameraView('z')} className="gizmo-btn gizmo-btn-lg">Z</button>
               </div>
