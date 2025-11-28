@@ -262,8 +262,6 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
         if (node.userData.initialY === undefined) node.userData.initialY = node.position.y;
 
         if (boneName === VRMHumanBoneName.Hips) {
-            const zOffset = (params.hipSize - 1.0) * -0.22;
-            node.position.z = node.userData.initialZ + zOffset;
             node.position.y = node.userData.initialY;
 
             updateRootPosition(vrm, params, node);
