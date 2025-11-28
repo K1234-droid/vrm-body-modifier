@@ -1,0 +1,287 @@
+import React from 'react';
+import { BodyParameters } from '../types';
+import { VRM } from '@pixiv/three-vrm';
+import LanguageSelector, { Language } from './LanguageSelector';
+import { translations } from '../utils/translations';
+
+interface SidebarProps {
+  vrm: VRM | null;
+  params: BodyParameters;
+  onChange: (key: keyof BodyParameters, value: number | string) => void;
+  onReset: () => void;
+  isFileLoaded: boolean;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  autoBlink: boolean;
+  setAutoBlink: (val: boolean) => void;
+}
+
+interface SliderGroupProps {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const SliderGroup: React.FC<SliderGroupProps> = ({ title, children, className }) => (
+  <div className={`mb-6 ${className || ''}`}>
+    <h4 className="sub-judul">{title}</h4>
+    <div className="space-y-5">
+      {children}
+    </div>
+  </div>
+);
+
+interface SliderProps {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (val: number) => void;
+}
+
+const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, step = 0.01, onChange }) => (
+  <div className="flex flex-col gap-2">
+    <div className="flex justify-between items-center">
+      <span className="modal-label !mb-0">{label}</span>
+      <span className="value-badge">
+        {value.toFixed(2)}
+      </span>
+    </div>
+    <div className="relative w-full h-6 flex items-center">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        aria-label={label}
+      />
+    </div>
+  </div>
+);
+
+interface SelectProps {
+  label: string;
+  value: string;
+  options: { label: string; value: string }[];
+  onChange: (val: string) => void;
+}
+
+const Select: React.FC<SelectProps> = ({ label, value, options, onChange }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedLabel = options.find(o => o.value === value)?.label || value;
+
+  return (
+    <div className="flex flex-col gap-2 mb-4" ref={containerRef}>
+      <span className="modal-label !mb-0">{label}</span>
+      <div className="custom-select-container w-full">
+        <div
+          className={`custom-select ${isOpen ? 'open' : ''}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span>{selectedLabel}</span>
+          <span className="select-arrow"></span>
+        </div>
+        <div className={`custom-select-options ${isOpen ? 'show' : ''}`} style={{ maxHeight: '200px', overflowY: 'auto' }}>
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              className={`custom-option ${value === opt.value ? 'selected' : ''}`}
+              onClick={() => { onChange(opt.value); setIsOpen(false); }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EXPRESSIONS = [
+  { label: 'Neutral', value: 'neutral' },
+  { label: 'Happy', value: 'happy' },
+  { label: 'Angry', value: 'angry' },
+  { label: 'Sad', value: 'sad' },
+  { label: 'Relaxed', value: 'relaxed' },
+  { label: 'Surprised', value: 'surprised' },
+  { label: 'aa', value: 'aa' },
+  { label: 'ih', value: 'ih' },
+  { label: 'ou', value: 'ou' },
+  { label: 'ee', value: 'ee' },
+  { label: 'oh', value: 'oh' },
+  { label: 'Blink', value: 'blink' },
+  { label: 'Blink Left', value: 'blinkLeft' },
+  { label: 'Blink Right', value: 'blinkRight' },
+  { label: 'Look Up', value: 'lookUp' },
+  { label: 'Look Down', value: 'lookDown' },
+  { label: 'Look Left', value: 'lookLeft' },
+  { label: 'Look Right', value: 'lookRight' },
+];
+
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink }) => {
+  if (!isFileLoaded) {
+    return null;
+  }
+
+  const t = translations[language];
+
+  return (
+    <div className="sidebar-container">
+      { }
+      <div className="modal-header">
+        <h3>{t.bodyParams}</h3>
+        <LanguageSelector language={language} setLanguage={setLanguage} />
+      </div>
+
+      { }
+      <div className="modal-body no-pt custom-scrollbar">
+
+        { }
+        <div className="mb-4">
+          <h4 className="sub-judul sub-judul-nomargin">{t.canvasView}</h4>
+          <div className="switch-container">
+            <label
+              className="switch-label cursor-pointer select-none"
+              onClick={onToggleDarkMode}
+              htmlFor="dark-mode-toggle"
+            >
+              {t.darkMode}
+            </label>
+            <label className="switch">
+              <input
+                type="checkbox"
+                id="dark-mode-toggle"
+                checked={isDarkMode}
+                onChange={onToggleDarkMode}
+              />
+              <span className="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <SliderGroup title={t.groups.expression}>
+          <div className="mb-4">
+            <div className="switch-container">
+              <label
+                className="switch-label cursor-pointer select-none"
+                onClick={() => setAutoBlink(!autoBlink)}
+              >
+                {t.params.autoBlink}
+              </label>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={autoBlink}
+                  onChange={(e) => setAutoBlink(e.target.checked)}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+          <Slider label={t.params.expNeutral} value={params.expNeutral} min={0} max={1} step={0.01} onChange={(v) => onChange('expNeutral', v)} />
+          <Slider label={t.params.expHappy} value={params.expHappy} min={0} max={1} step={0.01} onChange={(v) => onChange('expHappy', v)} />
+          <Slider label={t.params.expAngry} value={params.expAngry} min={0} max={1} step={0.01} onChange={(v) => onChange('expAngry', v)} />
+          <Slider label={t.params.expSad} value={params.expSad} min={0} max={1} step={0.01} onChange={(v) => onChange('expSad', v)} />
+          <Slider label={t.params.expRelaxed} value={params.expRelaxed} min={0} max={1} step={0.01} onChange={(v) => onChange('expRelaxed', v)} />
+          <Slider label={t.params.expSurprised} value={params.expSurprised} min={0} max={1} step={0.01} onChange={(v) => onChange('expSurprised', v)} />
+          <Slider label={t.params.expAa} value={params.expAa} min={0} max={1} step={0.01} onChange={(v) => onChange('expAa', v)} />
+          <Slider label={t.params.expIh} value={params.expIh} min={0} max={1} step={0.01} onChange={(v) => onChange('expIh', v)} />
+          <Slider label={t.params.expOu} value={params.expOu} min={0} max={1} step={0.01} onChange={(v) => onChange('expOu', v)} />
+          <Slider label={t.params.expEe} value={params.expEe} min={0} max={1} step={0.01} onChange={(v) => onChange('expEe', v)} />
+          <Slider label={t.params.expOh} value={params.expOh} min={0} max={1} step={0.01} onChange={(v) => onChange('expOh', v)} />
+          <Slider label={t.params.expBlink} value={params.expBlink} min={0} max={1} step={0.01} onChange={(v) => onChange('expBlink', v)} />
+          <Slider label={t.params.expBlinkLeft} value={params.expBlinkLeft} min={0} max={1} step={0.01} onChange={(v) => onChange('expBlinkLeft', v)} />
+          <Slider label={t.params.expBlinkRight} value={params.expBlinkRight} min={0} max={1} step={0.01} onChange={(v) => onChange('expBlinkRight', v)} />
+          <Slider label={t.params.expLookUp} value={params.expLookUp} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookUp', v)} />
+          <Slider label={t.params.expLookDown} value={params.expLookDown} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookDown', v)} />
+          <Slider label={t.params.expLookLeft} value={params.expLookLeft} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookLeft', v)} />
+          <Slider label={t.params.expLookRight} value={params.expLookRight} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookRight', v)} />
+
+          {vrm && vrm.expressionManager && vrm.expressionManager.expressions.map((expression) => {
+            const name = expression.expressionName;
+            const isStandard = EXPRESSIONS.some(e => e.value.toLowerCase() === name.toLowerCase());
+
+            if (!isStandard) {
+              const value = params.customExpressions?.[name] || 0;
+              return (
+                <Slider
+                  key={name}
+                  label={name}
+                  value={value}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => {
+                    const newCustomExpressions = { ...params.customExpressions, [name]: v };
+                    onChange('customExpressions', newCustomExpressions as any);
+                  }}
+                />
+              );
+            }
+            return null;
+          })}
+        </SliderGroup>
+
+        <SliderGroup title={t.groups.headNeck}>
+          <Slider label={t.params.headSize} value={params.headSize} onChange={(v) => onChange('headSize', v)} />
+          <Slider label={t.params.neckWidth} value={params.neckWidth} onChange={(v) => onChange('neckWidth', v)} />
+          <Slider label={t.params.neckHeight} value={params.neckHeight} onChange={(v) => onChange('neckHeight', v)} />
+        </SliderGroup>
+
+        <SliderGroup title={t.groups.upperBody}>
+          <Slider label={t.params.shoulderWidth} value={params.shoulderWidth} onChange={(v) => onChange('shoulderWidth', v)} />
+          <Slider label={t.params.chestSize} value={params.chestSize} onChange={(v) => onChange('chestSize', v)} />
+          <Slider label={t.params.stomachSize} value={params.stomachSize} onChange={(v) => onChange('stomachSize', v)} />
+          <Slider label={t.params.torsoHeight} value={params.torsoHeight} onChange={(v) => onChange('torsoHeight', v)} />
+          <Slider label={t.params.waistWidth} value={params.waistWidth} onChange={(v) => onChange('waistWidth', v)} />
+          <Slider label={t.params.hipSize} value={params.hipSize} onChange={(v) => onChange('hipSize', v)} />
+        </SliderGroup>
+
+        <SliderGroup title={t.groups.armsHands}>
+          <Slider label={t.params.armLength} value={params.armLength} onChange={(v) => onChange('armLength', v)} />
+          <Slider label={t.params.armMuscle} value={params.armMuscle} onChange={(v) => onChange('armMuscle', v)} />
+          <Slider label={t.params.forearmSize} value={params.forearmSize} onChange={(v) => onChange('forearmSize', v)} />
+          <Slider label={t.params.handSize} value={params.handSize} onChange={(v) => onChange('handSize', v)} />
+          <Slider label={t.params.fingerSize} value={params.fingerSize} onChange={(v) => onChange('fingerSize', v)} />
+        </SliderGroup>
+
+        <SliderGroup title={t.groups.legs} className="!mb-0">
+          <Slider label={t.params.legLength} value={params.legLength} onChange={(v) => onChange('legLength', v)} />
+          <Slider label={t.params.thighSize} value={params.thighSize} onChange={(v) => onChange('thighSize', v)} />
+          <Slider label={t.params.calfSize} value={params.calfSize} onChange={(v) => onChange('calfSize', v)} />
+          <Slider label={t.params.footSize} value={params.footSize} onChange={(v) => onChange('footSize', v)} />
+          <Slider label={t.params.toeSize} value={params.toeSize} onChange={(v) => onChange('toeSize', v)} />
+        </SliderGroup>
+      </div>
+
+      { }
+      <div className="modal-footer-actions">
+        <button
+          onClick={onReset}
+          className="modal-save-btn w-full"
+        >
+          {t.resetParams}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;

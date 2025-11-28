@@ -1,0 +1,5 @@
+{
+  "name": "VRM Body Modifier",
+  "description": "A React application to visualize and modify 3D VRM Avatars. Users can upload a .vrm file and adjust body proportions like head size, arm length, and leg thickness using a sidebar interface.",
+  "requestFramePermissions": []
+}
