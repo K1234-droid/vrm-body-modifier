@@ -80,3 +80,6 @@ The original developer disclaims all legal liability arising from such third-par
 
 ### Legal Notice
 This project is an independent open-source tool created by **K1234** and is not affiliated, endorsed, or sponsored by Pixiv Inc. or the VRoid Project. "VRoid" and "VRM" are trademarks of their respective owners.
+
+## License
+This project is licensed under the **MIT License**. See the [LICENSE.md](LICENSE.md) file for details.
