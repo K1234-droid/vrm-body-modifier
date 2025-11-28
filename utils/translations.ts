@@ -16,7 +16,7 @@ export const translations = {
         toggleHelpers: "Sembunyikan/Tampilkan Titik",
         reupload: "Unggah Ulang",
         uploadPose: "Unggah Pose",
-        controlsHelp: "Klik Kiri: Putar • Klik Kanan: Geser • Scroll: Zoom",
+        controlsHelp: "Klik Kiri: Putar | Klik Kanan: Geser | Scroll: Zoom",
         groups: {
             headNeck: "Kepala & Leher",
             upperBody: "Tubuh Bagian Atas",
