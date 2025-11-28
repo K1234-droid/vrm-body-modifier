@@ -79,4 +79,4 @@ The original developer disclaims all legal liability arising from such third-par
 *   **Automatic Blocking**: This application respects VRM license terms. Models with **"No Derivative Works" (ND)** are **automatically blocked** and cannot be loaded.
 
 ### Legal Notice
-This project is an independent open-source tool created by and is not affiliated, endorsed, or sponsored by Pixiv Inc. or the VRoid Project. "VRoid" and "VRM" are trademarks of their respective owners.
+This project is an independent open-source tool created by **K1234** and is not affiliated, endorsed, or sponsored by Pixiv Inc. or the VRoid Project. "VRoid" and "VRM" are trademarks of their respective owners.
