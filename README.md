@@ -57,7 +57,13 @@ Best regards,
 ## Compliance & Disclaimer
 
 ### Compliance with VRoid Studio Guidelines
-This application is designed specifically as a **runtime visualization utility**. It operates entirely within the browser's temporary memory (RAM) and **does not** have any feature to export, save, or re-process the 3D model into a new file. All body modifications are purely visual and temporary, vanishing immediately once the browser session is closed. This architecture is built to comply with VRoid Studio's terms prohibiting the creation of "Avatar Creation Tools" that generate deformed meshes.
+This application is designed specifically as a runtime visualization utility. It operates entirely within the browser's temporary memory (RAM) and does not have any feature to export, save, or re-process the 3D model into a new file.
+
+This architecture is strictly aligned with:
+* https://vroid.com/en/studio/guidelines (Specifically regarding the prohibition of creating "Avatar Creation Tools").
+* https://policies.pixiv.net/en.html (Regarding prohibited acts and intellectual property).
+
+Any modifications made within this tool are purely visual and temporary, vanishing immediately once the browser session is closed.
 
 ### Disclaimer
 Users are fully responsible for ensuring that modifications made to the avatar (such as body proportion changes or animations) do not violate the "Personality Rights" or specific licenses of the loaded avatar. The application developer is not responsible for user-generated screenshots or video recordings that may infringe on third-party copyright.
@@ -71,3 +77,6 @@ The original developer disclaims all legal liability arising from such third-par
 
 ### License Enforcement
 *   **Automatic Blocking**: This application respects VRM license terms. Models with **"No Derivative Works" (ND)** are **automatically blocked** and cannot be loaded.
+
+### Legal Notice
+This project is an independent open-source tool created by and is not affiliated, endorsed, or sponsored by Pixiv Inc. or the VRoid Project. "VRoid" and "VRM" are trademarks of their respective owners.
