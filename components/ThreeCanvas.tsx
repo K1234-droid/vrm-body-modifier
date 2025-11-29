@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { VRM, VRMHumanBoneName, VRMExpressionPresetName } from '@pixiv/three-vrm';
 import { applyBodyParameters, updateRootPosition } from '../services/vrmService';
-import { BodyParameters, BoneTransforms } from '../types';
+import { BodyParameters, BoneTransforms, CameraRatio } from '../types';
 import { translations } from '../utils/translations';
 import { Language } from './LanguageSelector';
 
@@ -23,6 +23,14 @@ interface ThreeCanvasProps {
   autoBlink: boolean;
   backgroundImage: string | null;
   setBackgroundImage: (image: string | null) => void;
+  isCameraMode: boolean;
+  setIsCameraMode: (val: boolean) => void;
+  cameraRatio: CameraRatio;
+  resolutionPreset: '1K' | '2K' | '4K' | '8K';
+  customResolution: { width: number; height: number };
+  isTransparent: boolean;
+  saveTrigger: { format: 'png' | 'jpg', timestamp: number } | null;
+  onSaveComplete: () => void;
 }
 
 type PoseType = 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
@@ -41,7 +49,15 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   isPlaying,
   autoBlink,
   backgroundImage,
-  setBackgroundImage
+  setBackgroundImage,
+  isCameraMode,
+  setIsCameraMode,
+  cameraRatio,
+  resolutionPreset,
+  customResolution,
+  isTransparent,
+  saveTrigger,
+  onSaveComplete
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>(0);
@@ -60,6 +76,17 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   const isDarkModeRef = useRef(isDarkMode);
   const isPlayingRef = useRef(isPlaying);
   const currentPoseRef = useRef(currentPose);
+  const isCameraModeRef = useRef(isCameraMode);
+  const cameraRatioRef = useRef(cameraRatio);
+  const resolutionPresetRef = useRef(resolutionPreset);
+  const customResolutionRef = useRef(customResolution);
+
+  useEffect(() => {
+    isCameraModeRef.current = isCameraMode;
+    cameraRatioRef.current = cameraRatio;
+    resolutionPresetRef.current = resolutionPreset;
+    customResolutionRef.current = customResolution;
+  }, [isCameraMode, cameraRatio, resolutionPreset, customResolution]);
 
   useEffect(() => {
     currentPoseRef.current = currentPose;
@@ -218,10 +245,116 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleResize = useCallback(() => {
+    if (!mountRef.current || !cameraRef.current || !rendererRef.current || !sceneRef.current) return;
+
+    let w = mountRef.current.clientWidth;
+    let h = mountRef.current.clientHeight;
+
+    const isCameraMode = isCameraModeRef.current;
+    const cameraRatio = cameraRatioRef.current;
+    const resolutionPreset = resolutionPresetRef.current;
+    const customResolution = customResolutionRef.current;
+
+    if (isCameraMode) {
+      let targetRatio = 16 / 9;
+      if (cameraRatio === '1:1') targetRatio = 1;
+      if (cameraRatio === '3:2') targetRatio = 3 / 2;
+      if (cameraRatio === '4:3') targetRatio = 4 / 3;
+      if (cameraRatio === '16:9') targetRatio = 16 / 9;
+      if (cameraRatio === 'Custom') {
+        targetRatio = customResolution.width / customResolution.height;
+      }
+
+      const containerW = mountRef.current.parentElement?.clientWidth || w;
+      const containerH = mountRef.current.parentElement?.clientHeight || h;
+
+      let displayW, displayH;
+      if (containerW / containerH > targetRatio) {
+        displayH = containerH;
+        displayW = displayH * targetRatio;
+      } else {
+        displayW = containerW;
+        displayH = displayW / targetRatio;
+      }
+
+      rendererRef.current.domElement.style.position = 'absolute';
+      rendererRef.current.domElement.style.left = `${(containerW - displayW) / 2}px`;
+      rendererRef.current.domElement.style.top = `${(containerH - displayH) / 2}px`;
+      rendererRef.current.domElement.style.width = `${displayW}px`;
+      rendererRef.current.domElement.style.height = `${displayH}px`;
+
+      let renderW, renderH;
+      if (cameraRatio === 'Custom') {
+        renderW = customResolution.width;
+        renderH = customResolution.height;
+      } else {
+        let baseHeight = 1080;
+        if (resolutionPreset === '2K') baseHeight = 1440;
+        if (resolutionPreset === '4K') baseHeight = 2160;
+        if (resolutionPreset === '8K') baseHeight = 4320;
+
+        renderH = baseHeight;
+        renderW = Math.round(renderH * targetRatio);
+      }
+
+      rendererRef.current.setPixelRatio(1);
+      rendererRef.current.setSize(renderW, renderH, false);
+
+      cameraRef.current.aspect = renderW / renderH;
+      cameraRef.current.updateProjectionMatrix();
+
+      if (sceneRef.current.background instanceof THREE.Texture && sceneRef.current.background.image) {
+        const img = sceneRef.current.background.image;
+        const canvasAspect = renderW / renderH;
+        const imageAspect = img.width / img.height;
+        const factor = imageAspect / canvasAspect;
+
+        sceneRef.current.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+        sceneRef.current.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+
+        sceneRef.current.background.repeat.x = factor > 1 ? 1 / factor : 1;
+        sceneRef.current.background.repeat.y = factor > 1 ? 1 : factor;
+      }
+
+    } else {
+      rendererRef.current.domElement.style.position = 'absolute';
+      rendererRef.current.domElement.style.left = '0';
+      rendererRef.current.domElement.style.top = '0';
+      rendererRef.current.domElement.style.width = '100%';
+      rendererRef.current.domElement.style.height = '100%';
+
+      rendererRef.current.setPixelRatio(window.devicePixelRatio);
+      rendererRef.current.setSize(w, h, true);
+
+      cameraRef.current.aspect = w / h;
+      cameraRef.current.updateProjectionMatrix();
+
+      if (sceneRef.current.background instanceof THREE.Texture && sceneRef.current.background.image) {
+        const img = sceneRef.current.background.image;
+        const canvasAspect = w / h;
+        const imageAspect = img.width / img.height;
+        const factor = imageAspect / canvasAspect;
+
+        sceneRef.current.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+        sceneRef.current.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+
+        sceneRef.current.background.repeat.x = factor > 1 ? 1 / factor : 1;
+        sceneRef.current.background.repeat.y = factor > 1 ? 1 : factor;
+      }
+    }
+  }, []);
+
   useEffect(() => {
     isDarkModeRef.current = isDarkMode;
     if (sceneRef.current) {
-      if (backgroundImage) {
+      if (isCameraMode && isTransparent) {
+        if (!isDarkMode) {
+          sceneRef.current.background = new THREE.Color('#E0E0E0');
+        } else {
+          sceneRef.current.background = null;
+        }
+      } else if (backgroundImage) {
         const loader = new THREE.TextureLoader();
         loader.load(backgroundImage, (texture) => {
           if (sceneRef.current) {
@@ -229,20 +362,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
             sceneRef.current.background = texture;
 
             if (mountRef.current) {
-              const img = texture.image;
-              if (img) {
-                const w = mountRef.current.clientWidth;
-                const h = mountRef.current.clientHeight;
-                const canvasAspect = w / h;
-                const imageAspect = img.width / img.height;
-                const factor = imageAspect / canvasAspect;
-
-                texture.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
-                texture.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
-
-                texture.repeat.x = factor > 1 ? 1 / factor : 1;
-                texture.repeat.y = factor > 1 ? 1 : factor;
-              }
+              handleResize();
             }
           }
         });
@@ -254,13 +374,15 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       const oldGrid = sceneRef.current.getObjectByName('GridHelper');
       if (oldGrid) sceneRef.current.remove(oldGrid);
 
-      const gridColor1 = isDarkMode ? 0x444444 : 0x888888;
-      const gridColor2 = isDarkMode ? 0x222222 : 0xcccccc;
-      const newGrid = new THREE.GridHelper(10, 10, gridColor1, gridColor2);
-      newGrid.name = 'GridHelper';
-      sceneRef.current.add(newGrid);
+      if (!isCameraMode) {
+        const gridColor1 = isDarkMode ? 0x444444 : 0x888888;
+        const gridColor2 = isDarkMode ? 0x222222 : 0xcccccc;
+        const newGrid = new THREE.GridHelper(10, 10, gridColor1, gridColor2);
+        newGrid.name = 'GridHelper';
+        sceneRef.current.add(newGrid);
+      }
     }
-  }, [isDarkMode, backgroundImage]);
+  }, [isDarkMode, backgroundImage, isCameraMode, isTransparent, handleResize]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -298,7 +420,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     directionalLight.position.set(1, 1, 1).normalize();
     scene.add(directionalLight);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -515,37 +637,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
     animate();
 
-    const handleResize = () => {
-      if (!mountRef.current || !camera || !renderer) return;
-      const w = mountRef.current.clientWidth;
-      const h = mountRef.current.clientHeight;
-      if (w === 0 || h === 0) return;
-
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-
-      if (scene.background instanceof THREE.Texture && scene.background.image) {
-        const img = scene.background.image;
-        const canvasAspect = w / h;
-        const imageAspect = img.width / img.height;
-        const factor = imageAspect / canvasAspect;
-
-        scene.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
-        scene.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
-
-        scene.background.repeat.x = factor > 1 ? 1 / factor : 1;
-        scene.background.repeat.y = factor > 1 ? 1 : factor;
-      }
-    };
-
-    const resizeObserver = new ResizeObserver(() => handleResize());
-    resizeObserver.observe(mountRef.current);
-    setTimeout(handleResize, 50);
-
     return () => {
       cancelAnimationFrame(requestRef.current);
-      resizeObserver.disconnect();
       renderer.dispose();
       if (mountRef.current && renderer.domElement) {
         if (mountRef.current.contains(renderer.domElement)) {
@@ -554,6 +647,44 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       }
     };
   }, []);
+
+
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => handleResize());
+    if (mountRef.current?.parentElement) {
+      resizeObserver.observe(mountRef.current.parentElement);
+    }
+    if (mountRef.current) {
+      resizeObserver.observe(mountRef.current);
+    }
+
+    setTimeout(handleResize, 50);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [handleResize]);
+
+  useEffect(() => {
+    handleResize();
+  }, [isCameraMode, cameraRatio, resolutionPreset, customResolution, handleResize]);
+
+  useEffect(() => {
+    if (saveTrigger && rendererRef.current && sceneRef.current && cameraRef.current) {
+      const renderer = rendererRef.current;
+      const scene = sceneRef.current;
+      const camera = cameraRef.current;
+
+      renderer.render(scene, camera);
+
+      const link = document.createElement('a');
+      link.download = `vrm-pose-${Date.now()}.${saveTrigger.format}`;
+      link.href = renderer.domElement.toDataURL(`image/${saveTrigger.format}`);
+      link.click();
+      onSaveComplete();
+    }
+  }, [saveTrigger, onSaveComplete]);
 
   const applyExpressions = (model: VRM, params: BodyParameters) => {
     if (!model.expressionManager) return;
@@ -599,6 +730,41 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
     model.expressionManager.update();
   };
+
+  const applyPose = (pose: PoseType, model: VRM) => {
+    if (!model.humanoid) return;
+    if (pose === 'Custom') return;
+
+    const resetRot = (bone: VRMHumanBoneName) => {
+      const node = model.humanoid?.getNormalizedBoneNode(bone);
+      if (node) {
+        node.rotation.set(0, 0, 0);
+        if (bone === 'hips') {
+          node.position.x = 0;
+          const rawNode = model.humanoid?.getRawBoneNode(bone);
+          if (rawNode) {
+            node.position.y = rawNode.position.y;
+            node.position.z = rawNode.position.z;
+          }
+        }
+      }
+    };
+    const setRot = (bone: VRMHumanBoneName, x: number, y: number, z: number) => {
+      const node = model.humanoid?.getNormalizedBoneNode(bone);
+      if (node) node.rotation.set(x, y, z);
+    };
+
+    Object.values(VRMHumanBoneName).forEach(resetRot);
+
+    if (pose === 'A-Pose') {
+      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, 0.8);
+      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -0.8);
+    } else if (pose === 'Stand') {
+      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, 1.4);
+      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -1.4);
+    }
+  };
+
 
   const lastUpdateRef = useRef<number>(0);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -810,6 +976,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (isCameraModeRef.current) return;
       if (currentPose !== 'Custom') return;
       if (isPlayingRef.current) return;
       if (isDraggingRef.current) return;
@@ -944,45 +1111,43 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
   useEffect(() => {
     boneHelpersRef.current.forEach(helper => {
+
       if (helper.material instanceof THREE.Material) {
-        helper.material.visible = showBoneHelpers && !isPlaying;
+        helper.material.visible = showBoneHelpers && !isPlaying && !isCameraModeRef.current;
       }
     });
-  }, [showBoneHelpers, currentPose, isPlaying]);
+  }, [showBoneHelpers, currentPose, isPlaying, isCameraMode]);
 
-  const applyPose = (pose: PoseType, model: VRM) => {
-    if (!model.humanoid) return;
-    if (pose === 'Custom') return;
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
 
-    const resetRot = (bone: VRMHumanBoneName) => {
-      const node = model.humanoid?.getNormalizedBoneNode(bone);
-      if (node) {
-        node.rotation.set(0, 0, 0);
-        if (bone === 'hips') {
-          node.position.x = 0;
-          const rawNode = model.humanoid?.getRawBoneNode(bone);
-          if (rawNode) {
-            node.position.y = rawNode.position.y;
-            node.position.z = rawNode.position.z;
-          }
-        }
+    if (transformControlsRef.current) {
+      const helper = transformControlsRef.current.getHelper();
+      if (isCameraMode) {
+        transformControlsRef.current.detach();
+        transformControlsRef.current.enabled = false;
+        scene.remove(helper);
+      } else {
+        transformControlsRef.current.enabled = true;
+        scene.add(helper);
       }
-    };
-    const setRot = (bone: VRMHumanBoneName, x: number, y: number, z: number) => {
-      const node = model.humanoid?.getNormalizedBoneNode(bone);
-      if (node) node.rotation.set(x, y, z);
-    };
-
-    Object.values(VRMHumanBoneName).forEach(resetRot);
-
-    if (pose === 'A-Pose') {
-      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, 0.8);
-      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -0.8);
-    } else if (pose === 'Stand') {
-      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, 1.4);
-      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -1.4);
     }
-  };
+
+    if (transformControlsTranslateRef.current) {
+      const helper = transformControlsTranslateRef.current.getHelper();
+      if (isCameraMode) {
+        transformControlsTranslateRef.current.detach();
+        transformControlsTranslateRef.current.enabled = false;
+        scene.remove(helper);
+      } else {
+        transformControlsTranslateRef.current.enabled = true;
+        scene.add(helper);
+      }
+    }
+  }, [isCameraMode]);
+
+
 
   const handleEyeControl = (action: 'lookAtCamera' | 'gazeController') => {
     if (action === 'lookAtCamera') {
@@ -1041,7 +1206,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     <div className="full-absolute bg-transparent">
       <div ref={mountRef} className="full-absolute" />
 
-      {eyeMenu && eyeMenu.visible && !isPlaying && (
+      {eyeMenu && eyeMenu.visible && !isPlaying && !isCameraMode && (
         <div
           className="custom-select-container force-dark-dropdown eye-menu-container"
           style={{
@@ -1061,7 +1226,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
         </div>
       )}
 
-      {showGazeController && !isPlaying && (
+      {showGazeController && !isPlaying && !isCameraMode && (
         <div className="absolute custom-gaze-position left-4 gaze-controller-styled-menu p-4 z-50 text-white w-64">
           <div className="flex justify-between items-center mb-0">
             <h3 className="sub-judul sub-judul-nomargin">{t.eyeControl.gazeController}</h3>
@@ -1143,12 +1308,25 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
           { }
           <div className="gizmo-container">
             { }
+            {!isCameraMode && (
+              <button
+                onClick={() => setIsCameraMode(true)}
+                className="gizmo-btn group"
+                data-tooltip={t.camera}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                </svg>
+              </button>
+            )}
+
             <button onClick={resetCamera} className="gizmo-btn group" data-tooltip={t.resetCamera}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
               </svg>
             </button>
-            {currentPose === 'Custom' && !isPlaying && (
+            {currentPose === 'Custom' && !isPlaying && !isCameraMode && (
               <button
                 onClick={() => setShowBoneHelpers(!showBoneHelpers)}
                 className="gizmo-btn group"

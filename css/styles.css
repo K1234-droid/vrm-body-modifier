@@ -745,3 +745,39 @@ input[type=range]::-webkit-slider-runnable-track {
 .gaze-grid-border {
     border: 1px solid var(--gaze-border-color) !important;
 }
+
+.camera-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    background-color: var(--select-bg);
+    color: var(--text-color);
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    resize: none;
+}
+
+.camera-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background-color: transparent;
+}
+
+.camera-input::-webkit-outer-spin-button,
+.camera-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    background: transparent;
+    width: 14px;
+    height: 100%;
+}
+
+.camera-input::-webkit-inner-spin-button {
+    opacity: 0.5;
+    background: transparent !important;
+    position: relative;
+    right: 4px;
+}

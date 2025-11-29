@@ -45,6 +45,8 @@ export type BoneTransforms = Record<string, {
   position?: { x: number; y: number; z: number };
 }>;
 
+export type CameraRatio = '1:1' | '3:2' | '4:3' | '16:9' | 'Custom';
+
 export const DEFAULT_PARAMETERS: BodyParameters = {
   headSize: 1.0,
   neckWidth: 1.0,

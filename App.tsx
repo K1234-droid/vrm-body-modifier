@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ThreeCanvas from './components/ThreeCanvas';
-import { BodyParameters, DEFAULT_PARAMETERS, BoneTransforms } from './types';
+import { BodyParameters, DEFAULT_PARAMETERS, BoneTransforms, CameraRatio } from './types';
 import { loadVRM } from './services/vrmService';
 import { VRM } from '@pixiv/three-vrm';
 import { createVRMAnimationClip, VRMAnimationLoaderPlugin, VRMLookAtQuaternionProxy } from '@pixiv/three-vrm-animation';
@@ -24,6 +24,12 @@ const App: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoBlink, setAutoBlink] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [isCameraMode, setIsCameraMode] = useState(false);
+  const [cameraRatio, setCameraRatio] = useState<CameraRatio>('16:9');
+  const [resolutionPreset, setResolutionPreset] = useState<'1K' | '2K' | '4K' | '8K'>('1K');
+  const [customResolution, setCustomResolution] = useState({ width: 1080, height: 1920 });
+  const [isTransparent, setIsTransparent] = useState(false);
+  const [saveTrigger, setSaveTrigger] = useState<{ format: 'png' | 'jpg', timestamp: number } | null>(null);
 
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('app_language');
@@ -98,6 +104,10 @@ const App: React.FC = () => {
   };
 
   const handleReupload = () => {
+    if (isCameraMode) {
+      setIsCameraMode(false);
+      return;
+    }
     setVrm(null);
     setParams(DEFAULT_PARAMETERS);
     setCurrentPose('T-Pose');
@@ -107,6 +117,10 @@ const App: React.FC = () => {
     setIsAnimation(false);
     setIsPlaying(false);
     setAutoBlink(false);
+  };
+
+  const handleSave = (format: 'png' | 'jpg') => {
+    setSaveTrigger({ format, timestamp: Date.now() });
   };
 
   const handlePoseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -229,6 +243,10 @@ const App: React.FC = () => {
     );
   }
 
+  const handleSaveComplete = () => {
+    setSaveTrigger(null);
+  };
+
   return (
     <div className="app-layout">
       <div className="main-canvas-area">
@@ -239,7 +257,7 @@ const App: React.FC = () => {
             onClick={handleReupload}
             className="modal-secondary-btn force-dark-style flex items-center gap-2 shadow-lg"
           >
-            {t.reupload}
+            {isCameraMode ? t.exitCamera : t.reupload}
           </button>
 
           {currentPose === 'Custom' && (
@@ -299,12 +317,22 @@ const App: React.FC = () => {
           autoBlink={autoBlink}
           backgroundImage={backgroundImage}
           setBackgroundImage={setBackgroundImage}
+          isCameraMode={isCameraMode}
+          setIsCameraMode={setIsCameraMode}
+          cameraRatio={cameraRatio}
+          resolutionPreset={resolutionPreset}
+          customResolution={customResolution}
+          isTransparent={isTransparent}
+          saveTrigger={saveTrigger}
+          onSaveComplete={handleSaveComplete}
         />
 
         { }
-        <div className="helper-box">
-          <p className="m-0">{t.controlsHelp}</p>
-        </div>
+        {!isCameraMode && (
+          <div className="helper-box">
+            <p className="m-0">{t.controlsHelp}</p>
+          </div>
+        )}
       </div>
 
       { }
@@ -322,6 +350,16 @@ const App: React.FC = () => {
         setAutoBlink={setAutoBlink}
         backgroundImage={backgroundImage}
         setBackgroundImage={setBackgroundImage}
+        isCameraMode={isCameraMode}
+        cameraRatio={cameraRatio}
+        setCameraRatio={setCameraRatio}
+        resolutionPreset={resolutionPreset}
+        setResolutionPreset={setResolutionPreset}
+        customResolution={customResolution}
+        setCustomResolution={setCustomResolution}
+        isTransparent={isTransparent}
+        setIsTransparent={setIsTransparent}
+        onSave={handleSave}
       />
     </div>
   );

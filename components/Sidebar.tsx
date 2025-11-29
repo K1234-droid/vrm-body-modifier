@@ -1,5 +1,5 @@
 import React from 'react';
-import { BodyParameters } from '../types';
+import { BodyParameters, CameraRatio } from '../types';
 import { VRM } from '@pixiv/three-vrm';
 import LanguageSelector, { Language } from './LanguageSelector';
 import { translations } from '../utils/translations';
@@ -18,6 +18,16 @@ interface SidebarProps {
   setAutoBlink: (val: boolean) => void;
   backgroundImage: string | null;
   setBackgroundImage: (image: string | null) => void;
+  isCameraMode: boolean;
+  cameraRatio: CameraRatio;
+  setCameraRatio: (ratio: CameraRatio) => void;
+  resolutionPreset: '1K' | '2K' | '4K' | '8K';
+  setResolutionPreset: (res: '1K' | '2K' | '4K' | '8K') => void;
+  customResolution: { width: number; height: number };
+  setCustomResolution: (res: { width: number; height: number }) => void;
+  isTransparent: boolean;
+  setIsTransparent: (val: boolean) => void;
+  onSave: (format: 'png' | 'jpg') => void;
 }
 
 interface SliderGroupProps {
@@ -71,9 +81,11 @@ interface SelectProps {
   value: string;
   options: { label: string; value: string }[];
   onChange: (val: string) => void;
+  displayLabel?: string;
+  className?: string;
 }
 
-const Select: React.FC<SelectProps> = ({ label, value, options, onChange }) => {
+const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displayLabel, className }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -83,15 +95,26 @@ const Select: React.FC<SelectProps> = ({ label, value, options, onChange }) => {
         setIsOpen(false);
       }
     };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
-  const selectedLabel = options.find(o => o.value === value)?.label || value;
+  const selectedLabel = displayLabel || options.find(o => o.value === value)?.label || value;
 
   return (
-    <div className="flex flex-col gap-2 mb-4" ref={containerRef}>
-      <span className="modal-label !mb-0">{label}</span>
+    <div className={`flex flex-col gap-2 ${className || 'mb-4'}`} ref={containerRef}>
+      {!displayLabel && <span className="modal-label !mb-0">{label}</span>}
       <div className="custom-select-container w-full">
         <div
           className={`custom-select ${isOpen ? 'open' : ''}`}
@@ -100,11 +123,11 @@ const Select: React.FC<SelectProps> = ({ label, value, options, onChange }) => {
           <span>{selectedLabel}</span>
           <span className="select-arrow"></span>
         </div>
-        <div className={`custom-select-options ${isOpen ? 'show' : ''}`} style={{ maxHeight: '200px', overflowY: 'auto' }}>
+        <div className={`custom-select-options ${isOpen ? 'show' : ''}`}>
           {options.map((opt) => (
             <div
               key={opt.value}
-              className={`custom-option ${value === opt.value ? 'selected' : ''}`}
+              className={`custom-option font-medium ${value === opt.value ? 'selected' : ''}`}
               onClick={() => { onChange(opt.value); setIsOpen(false); }}
             >
               {opt.label}
@@ -137,7 +160,7 @@ const EXPRESSIONS = [
   { label: 'Look Right', value: 'lookRight' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage }) => {
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave }) => {
   if (!isFileLoaded) {
     return null;
   }
@@ -148,8 +171,25 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
     <div className="sidebar-container">
       { }
       <div className="modal-header">
-        <h3>{t.bodyParams}</h3>
-        <LanguageSelector language={language} setLanguage={setLanguage} />
+        <h3>{isCameraMode ? t.cameraMode : t.bodyParams}</h3>
+        {isCameraMode ? (
+          <Select
+            label={t.ratio}
+            displayLabel={t.ratio}
+            value={cameraRatio}
+            options={[
+              { label: '1:1', value: '1:1' },
+              { label: '3:2', value: '3:2' },
+              { label: '4:3', value: '4:3' },
+              { label: '16:9', value: '16:9' },
+              { label: t.custom, value: 'Custom' },
+            ]}
+            onChange={(val) => setCameraRatio(val as CameraRatio)}
+            className="mb-0"
+          />
+        ) : (
+          <LanguageSelector language={language} setLanguage={setLanguage} />
+        )}
       </div>
 
       { }
@@ -157,7 +197,9 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
         { }
         <div className="mb-4">
-          <h4 className="sub-judul sub-judul-nomargin">{t.canvasView}</h4>
+          <h4 className="sub-judul sub-judul-nomargin">
+            {t.canvasView}{isCameraMode ? `: ${cameraRatio === 'Custom' ? t.custom : cameraRatio}` : ''}
+          </h4>
           {backgroundImage ? (
             <button
               onClick={() => setBackgroundImage(null)}
@@ -168,7 +210,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
           ) : (
             <div className="switch-container">
               <label
-                className="switch-label cursor-pointer select-none"
+                className="switch-label cursor-pointer select-none font-medium"
                 onClick={onToggleDarkMode}
                 htmlFor="dark-mode-toggle"
               >
@@ -185,13 +227,77 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               </label>
             </div>
           )}
+
+          {isCameraMode && (
+            <>
+              <div className="switch-container">
+                <label
+                  className="switch-label cursor-pointer select-none font-medium"
+                  onClick={() => setIsTransparent(!isTransparent)}
+                >
+                  {t.transparent}
+                </label>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={isTransparent}
+                    onChange={(e) => setIsTransparent(e.target.checked)}
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              {cameraRatio !== 'Custom' && (
+                <div className="switch-container">
+                  <span className="switch-label font-medium">{t.resolution}</span> { }
+                  { }
+                  <Select
+                    label={t.resolution}
+                    displayLabel={resolutionPreset}
+                    value={resolutionPreset}
+                    options={[
+                      { label: '1K (1080p)', value: '1K' },
+                      { label: '2K (1440p)', value: '2K' },
+                      { label: '4K (2160p)', value: '4K' },
+                      { label: '8K (4320p)', value: '8K' },
+                    ]}
+                    onChange={(val) => setResolutionPreset(val as any)}
+                    className="!mb-0 w-[140px]"
+                  />
+                </div>
+              )}
+
+              {cameraRatio === 'Custom' && (
+                <div className="flex gap-3 mt-4 mb-6">
+                  <div className="flex flex-col gap-3 w-1/2">
+                    <label className="modal-label !mb-0">{t.width}</label>
+                    <input
+                      type="number"
+                      className="w-full camera-input"
+                      value={customResolution.width}
+                      onChange={(e) => setCustomResolution({ ...customResolution, width: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-3 w-1/2">
+                    <label className="modal-label !mb-0">{t.height}</label>
+                    <input
+                      type="number"
+                      className="w-full camera-input"
+                      value={customResolution.height}
+                      onChange={(e) => setCustomResolution({ ...customResolution, height: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
-        <SliderGroup title={t.groups.expression}>
+        <SliderGroup title={t.groups.expression} className={isCameraMode ? "!mb-0" : "mb-6"}>
           <div className="mb-4">
             <div className="switch-container">
               <label
-                className="switch-label cursor-pointer select-none"
+                className="switch-label cursor-pointer select-none font-medium"
                 onClick={() => setAutoBlink(!autoBlink)}
               >
                 {t.params.autoBlink}
@@ -250,48 +356,63 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
           })}
         </SliderGroup>
 
-        <SliderGroup title={t.groups.headNeck}>
-          <Slider label={t.params.headSize} value={params.headSize} onChange={(v) => onChange('headSize', v)} />
-          <Slider label={t.params.neckWidth} value={params.neckWidth} onChange={(v) => onChange('neckWidth', v)} />
-          <Slider label={t.params.neckHeight} value={params.neckHeight} onChange={(v) => onChange('neckHeight', v)} />
-        </SliderGroup>
 
-        <SliderGroup title={t.groups.upperBody}>
-          <Slider label={t.params.shoulderWidth} value={params.shoulderWidth} onChange={(v) => onChange('shoulderWidth', v)} />
-          <Slider label={t.params.chestSize} value={params.chestSize} onChange={(v) => onChange('chestSize', v)} />
-          <Slider label={t.params.stomachSize} value={params.stomachSize} onChange={(v) => onChange('stomachSize', v)} />
-          <Slider label={t.params.torsoHeight} value={params.torsoHeight} onChange={(v) => onChange('torsoHeight', v)} />
-          <Slider label={t.params.waistWidth} value={params.waistWidth} onChange={(v) => onChange('waistWidth', v)} />
-          <Slider label={t.params.hipSize} value={params.hipSize} onChange={(v) => onChange('hipSize', v)} />
-        </SliderGroup>
 
-        <SliderGroup title={t.groups.armsHands}>
-          <Slider label={t.params.armLength} value={params.armLength} onChange={(v) => onChange('armLength', v)} />
-          <Slider label={t.params.armMuscle} value={params.armMuscle} onChange={(v) => onChange('armMuscle', v)} />
-          <Slider label={t.params.forearmSize} value={params.forearmSize} onChange={(v) => onChange('forearmSize', v)} />
-          <Slider label={t.params.handSize} value={params.handSize} onChange={(v) => onChange('handSize', v)} />
-          <Slider label={t.params.fingerSize} value={params.fingerSize} onChange={(v) => onChange('fingerSize', v)} />
-        </SliderGroup>
+        {!isCameraMode && (
+          <>
+            <SliderGroup title={t.groups.headNeck}>
+              <Slider label={t.params.headSize} value={params.headSize} onChange={(v) => onChange('headSize', v)} />
+              <Slider label={t.params.neckWidth} value={params.neckWidth} onChange={(v) => onChange('neckWidth', v)} />
+              <Slider label={t.params.neckHeight} value={params.neckHeight} onChange={(v) => onChange('neckHeight', v)} />
+            </SliderGroup>
 
-        <SliderGroup title={t.groups.legs} className="!mb-0">
-          <Slider label={t.params.legLength} value={params.legLength} onChange={(v) => onChange('legLength', v)} />
-          <Slider label={t.params.thighSize} value={params.thighSize} onChange={(v) => onChange('thighSize', v)} />
-          <Slider label={t.params.calfSize} value={params.calfSize} onChange={(v) => onChange('calfSize', v)} />
-          <Slider label={t.params.footSize} value={params.footSize} onChange={(v) => onChange('footSize', v)} />
-          <Slider label={t.params.toeSize} value={params.toeSize} onChange={(v) => onChange('toeSize', v)} />
-        </SliderGroup>
+            <SliderGroup title={t.groups.upperBody}>
+              <Slider label={t.params.shoulderWidth} value={params.shoulderWidth} onChange={(v) => onChange('shoulderWidth', v)} />
+              <Slider label={t.params.chestSize} value={params.chestSize} onChange={(v) => onChange('chestSize', v)} />
+              <Slider label={t.params.stomachSize} value={params.stomachSize} onChange={(v) => onChange('stomachSize', v)} />
+              <Slider label={t.params.torsoHeight} value={params.torsoHeight} onChange={(v) => onChange('torsoHeight', v)} />
+              <Slider label={t.params.waistWidth} value={params.waistWidth} onChange={(v) => onChange('waistWidth', v)} />
+              <Slider label={t.params.hipSize} value={params.hipSize} onChange={(v) => onChange('hipSize', v)} />
+            </SliderGroup>
+
+            <SliderGroup title={t.groups.armsHands}>
+              <Slider label={t.params.armLength} value={params.armLength} onChange={(v) => onChange('armLength', v)} />
+              <Slider label={t.params.armMuscle} value={params.armMuscle} onChange={(v) => onChange('armMuscle', v)} />
+              <Slider label={t.params.forearmSize} value={params.forearmSize} onChange={(v) => onChange('forearmSize', v)} />
+              <Slider label={t.params.handSize} value={params.handSize} onChange={(v) => onChange('handSize', v)} />
+              <Slider label={t.params.fingerSize} value={params.fingerSize} onChange={(v) => onChange('fingerSize', v)} />
+            </SliderGroup>
+
+            <SliderGroup title={t.groups.legs} className="!mb-0">
+              <Slider label={t.params.legLength} value={params.legLength} onChange={(v) => onChange('legLength', v)} />
+              <Slider label={t.params.thighSize} value={params.thighSize} onChange={(v) => onChange('thighSize', v)} />
+              <Slider label={t.params.calfSize} value={params.calfSize} onChange={(v) => onChange('calfSize', v)} />
+              <Slider label={t.params.footSize} value={params.footSize} onChange={(v) => onChange('footSize', v)} />
+              <Slider label={t.params.toeSize} value={params.toeSize} onChange={(v) => onChange('toeSize', v)} />
+            </SliderGroup>
+          </>
+        )}
       </div>
 
       { }
       <div className="modal-footer-actions">
-        <button
-          onClick={onReset}
-          className="modal-save-btn w-full"
-        >
-          {t.resetParams}
-        </button>
+        {isCameraMode ? (
+          <button
+            onClick={() => onSave(isTransparent ? 'png' : 'jpg')}
+            className="modal-save-btn w-full"
+          >
+            {isTransparent ? t.saveAsPng : t.saveAsJpg}
+          </button>
+        ) : (
+          <button
+            onClick={onReset}
+            className="modal-save-btn w-full"
+          >
+            {t.resetParams}
+          </button>
+        )}
       </div>
-    </div>
+    </div >
   );
 };
 
