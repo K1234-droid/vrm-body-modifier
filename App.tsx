@@ -120,6 +120,7 @@ const App: React.FC = () => {
   };
 
   const handleSave = (format: 'png' | 'jpg') => {
+    setIsLoading(true);
     setSaveTrigger({ format, timestamp: Date.now() });
   };
 
@@ -245,11 +246,18 @@ const App: React.FC = () => {
 
   const handleSaveComplete = () => {
     setSaveTrigger(null);
+    setIsLoading(false);
   };
 
   return (
     <div className="app-layout">
       <div className="main-canvas-area">
+        {isLoading && (
+          <div className="loading-overlay" style={{ zIndex: 9999 }}>
+            <div className="loading-spinner"></div>
+            <p className="font-semibold animate-pulse text-[var(--text-color)]">{t.processing}</p>
+          </div>
+        )}
 
         { }
         <div className="absolute top-4 left-4 z-20 flex gap-3">

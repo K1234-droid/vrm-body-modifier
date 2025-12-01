@@ -299,14 +299,14 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       }
 
       rendererRef.current.setPixelRatio(1);
-      rendererRef.current.setSize(renderW, renderH, false);
+      rendererRef.current.setSize(displayW, displayH, false);
 
-      cameraRef.current.aspect = renderW / renderH;
+      cameraRef.current.aspect = displayW / displayH;
       cameraRef.current.updateProjectionMatrix();
 
       if (sceneRef.current.background instanceof THREE.Texture && sceneRef.current.background.image) {
         const img = sceneRef.current.background.image;
-        const canvasAspect = renderW / renderH;
+        const canvasAspect = displayW / displayH;
         const imageAspect = img.width / img.height;
         const factor = imageAspect / canvasAspect;
 
@@ -676,15 +676,70 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       const scene = sceneRef.current;
       const camera = cameraRef.current;
 
-      renderer.render(scene, camera);
+      setTimeout(() => {
+        if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
 
-      const link = document.createElement('a');
-      link.download = `vrm-pose-${Date.now()}.${saveTrigger.format}`;
-      link.href = renderer.domElement.toDataURL(`image/${saveTrigger.format}`);
-      link.click();
-      onSaveComplete();
+        const renderer = rendererRef.current;
+        const scene = sceneRef.current;
+        const camera = cameraRef.current;
+
+        let targetW, targetH;
+        const ratio = cameraRatioRef.current;
+        const preset = resolutionPresetRef.current;
+        const custom = customResolutionRef.current;
+
+        let targetRatio = 16 / 9;
+        if (ratio === '1:1') targetRatio = 1;
+        if (ratio === '3:2') targetRatio = 3 / 2;
+        if (ratio === '4:3') targetRatio = 4 / 3;
+        if (ratio === '16:9') targetRatio = 16 / 9;
+        if (ratio === 'Custom') {
+          targetRatio = custom.width / custom.height;
+        }
+
+        if (ratio === 'Custom') {
+          targetW = custom.width;
+          targetH = custom.height;
+        } else {
+          let baseHeight = 1080;
+          if (preset === '2K') baseHeight = 1440;
+          if (preset === '4K') baseHeight = 2160;
+          if (preset === '8K') baseHeight = 4320;
+
+          targetH = baseHeight;
+          targetW = Math.round(targetH * targetRatio);
+        }
+
+        renderer.setSize(targetW, targetH, false);
+        camera.aspect = targetW / targetH;
+        camera.updateProjectionMatrix();
+
+        if (scene.background instanceof THREE.Texture && scene.background.image) {
+          const img = scene.background.image;
+          const canvasAspect = targetW / targetH;
+          const imageAspect = img.width / img.height;
+          const factor = imageAspect / canvasAspect;
+
+          scene.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+          scene.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+
+          scene.background.repeat.x = factor > 1 ? 1 / factor : 1;
+          scene.background.repeat.y = factor > 1 ? 1 : factor;
+        }
+
+        renderer.render(scene, camera);
+
+        const link = document.createElement('a');
+        link.download = `vrm-pose-${Date.now()}.${saveTrigger.format}`;
+        link.href = renderer.domElement.toDataURL(`image/${saveTrigger.format}`);
+        link.click();
+
+        handleResize();
+
+        onSaveComplete();
+      }, 500);
     }
-  }, [saveTrigger, onSaveComplete]);
+  }, [saveTrigger, onSaveComplete, handleResize]);
 
   const applyExpressions = (model: VRM, params: BodyParameters) => {
     if (!model.expressionManager) return;
