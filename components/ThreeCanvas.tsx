@@ -171,14 +171,17 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       const headQuat = normalizedHead.getWorldQuaternion(tempQuat);
       vCam.applyQuaternion(headQuat.invert());
 
+      const isVrm1 = vrmRef.current.meta?.metaVersion === '1';
       const D = 5.0;
       const S = 20.0;
       const vx = vCam.x;
       const vy = vCam.y;
       const vz = vCam.z;
 
-      const thetaX = Math.atan2(vx, -vz);
-      const thetaY = Math.atan2(vy, -vz);
+      const forwardZ = isVrm1 ? vz : -vz;
+
+      const thetaX = Math.atan2(vx, forwardZ);
+      const thetaY = Math.atan2(vy, forwardZ);
 
       const maxAngle = Math.atan(S / D);
 
@@ -186,9 +189,13 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       let y = 0;
 
       if (Math.abs(thetaX) >= maxAngle) {
-        x = -Math.sign(thetaX);
+        x = Math.sign(thetaX);
       } else {
-        x = -Math.tan(thetaX) * (D / S);
+        x = Math.tan(thetaX) * (D / S);
+      }
+
+      if (!isVrm1) {
+        x = -x;
       }
 
       if (Math.abs(thetaY) >= maxAngle) {
@@ -559,11 +566,12 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
             const up = new THREE.Vector3(0, 1, 0).applyQuaternion(headQuat);
 
             const sensitivity = 20.0;
-            const distance = 5.0;
+            const isVrm1 = vrmRef.current.meta?.metaVersion === '1';
+            const distance = isVrm1 ? -5.0 : 5.0;
 
             const targetPos = originPos.clone()
               .add(forward.multiplyScalar(distance))
-              .add(right.multiplyScalar(gazePositionRef.current.x * sensitivity))
+              .add(right.multiplyScalar(gazePositionRef.current.x * sensitivity * (isVrm1 ? -1 : 1)))
               .add(up.multiplyScalar(gazePositionRef.current.y * sensitivity));
 
             gazeTargetRef.current.position.copy(targetPos);
@@ -639,12 +647,14 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
     return () => {
       cancelAnimationFrame(requestRef.current);
+      renderer.forceContextLoss();
       renderer.dispose();
       if (mountRef.current && renderer.domElement) {
         if (mountRef.current.contains(renderer.domElement)) {
           mountRef.current.removeChild(renderer.domElement);
         }
       }
+      rendererRef.current = null;
     };
   }, []);
 
@@ -821,11 +831,15 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     Object.values(VRMHumanBoneName).forEach(resetRot);
 
     if (pose === 'A-Pose') {
-      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, 0.8);
-      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -0.8);
+      const isVrm1 = model.meta?.metaVersion === '1';
+      const armRotation = isVrm1 ? -0.8 : 0.8;
+      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, armRotation);
+      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -armRotation);
     } else if (pose === 'Stand') {
-      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, 1.4);
-      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -1.4);
+      const isVrm1 = model.meta?.metaVersion === '1';
+      const armRotation = isVrm1 ? -1.4 : 1.4;
+      setRot(VRMHumanBoneName.LeftUpperArm, 0, 0, armRotation);
+      setRot(VRMHumanBoneName.RightUpperArm, 0, 0, -armRotation);
     }
   };
 

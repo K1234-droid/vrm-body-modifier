@@ -17,7 +17,11 @@ export const loadVRM = async (file: File): Promise<VRM> => {
             (gltf) => {
                 const vrm = gltf.userData.vrm;
                 if (vrm) {
-                    vrm.scene.rotation.y = Math.PI;
+                    if (vrm.meta?.metaVersion === '1') {
+                        vrm.scene.rotation.y = 0;
+                    } else {
+                        vrm.scene.rotation.y = Math.PI;
+                    }
                     vrm.scene.updateMatrixWorld(true);
                     vrm.scene.traverse((object: any) => {
                         if ((object as THREE.Mesh).isMesh) {
