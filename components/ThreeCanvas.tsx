@@ -727,7 +727,16 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
           scene.background.repeat.y = factor > 1 ? 1 : factor;
         }
 
+        const originalBackground = scene.background;
+        if (isTransparent) {
+          scene.background = null;
+        }
+
         renderer.render(scene, camera);
+
+        if (isTransparent) {
+          scene.background = originalBackground;
+        }
 
         const link = document.createElement('a');
         link.download = `vrm-pose-${Date.now()}.${saveTrigger.format}`;
