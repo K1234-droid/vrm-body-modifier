@@ -49,7 +49,7 @@ This application is a web-based tool designed to load, modify, and animate VRM 3
 * **@pixiv/three-vrm** - Official library for handling VRM files.
 * **React** - The JavaScript library for building the user interface.
 * **Vite** - Next Generation Frontend Tooling.
-* **Tailwind CSS** - Utility-first CSS framework for styling.
+* **Heroicons** - For the icons on this website.
 
 Best regards,
 **K1234**
