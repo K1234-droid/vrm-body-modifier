@@ -231,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
           {isCameraMode && (
             <>
-              <div className="switch-container">
+              <div className="switch-container mb-3">
                 <label
                   className="switch-label cursor-pointer select-none"
                   onClick={() => setIsTransparent(!isTransparent)}
@@ -269,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               )}
 
               {cameraRatio === 'Custom' && (
-                <div className="flex gap-3 mt-4 mb-6">
+                <div className="flex gap-3 mt-3 mb-8">
                   <div className="flex flex-col gap-3 w-1-2">
                     <label className="modal-label !mb-0">{t.width}</label>
                     <input
@@ -295,7 +295,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         </div>
 
         <SliderGroup title={t.groups.expression} className={isCameraMode ? "!mb-0" : "mb-6 mt-4"}>
-          <div className="switch-container mb-4">
+          <div className="switch-container mb-7">
             <label
               className="switch-label cursor-pointer select-none"
               onClick={() => setAutoBlink(!autoBlink)}

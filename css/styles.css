@@ -222,6 +222,10 @@ body.light-theme {
     margin-top: 0.5rem;
 }
 
+.mt-3 {
+    margin-top: 0.85rem;
+}
+
 .mt-4 {
     margin-top: 1rem;
 }
@@ -231,7 +235,7 @@ body.light-theme {
 }
 
 .mt-6 {
-    margin-top: 2.22rem;
+    margin-top: 2.4rem;
 }
 
 .mt-8 {
@@ -259,11 +263,19 @@ body.light-theme {
 }
 
 .mb-5 {
-    margin-bottom: 1.77rem;
+    margin-bottom: 1.85rem;
 }
 
 .mb-6 {
     margin-bottom: 1.5rem;
+}
+
+.mb-7 {
+    margin-bottom: 1.05rem;
+}
+
+.mb-8 {
+    margin-bottom: 2.05rem;
 }
 
 .mx-auto {
