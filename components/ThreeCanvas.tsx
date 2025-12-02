@@ -1346,7 +1346,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
               <div className="absolute top-1-2 left-0 w-full h-0.5 bg-gaze-dark -translate-y-1-2"></div>
               <div className="absolute top-0 left-1-2 w-0.5 h-full bg-gaze-dark -translate-x-1-2"></div>
 
-              {/* Control Point */}
+              { }
               <div
                 className="absolute w-4 h-4 bg-gaze-dark rounded-full -translate-1-2 pointer-events-none"
                 style={{
@@ -1364,7 +1364,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
           { }
           <div className="absolute top-4 right-4 z-50">
             <div
-              className="custom-select-container w-140 force-dark-dropdown"
+              className="custom-select-container w-140 force-dark-dropdown-pose"
               tabIndex={-1}
               onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsPoseDropdownOpen(false); }}
             >

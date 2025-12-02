@@ -123,11 +123,11 @@ body.light-theme {
 }
 
 .bottom-9 {
-    bottom: 2.25rem;
+    bottom: 2.35rem;
 }
 
 .right-8 {
-    right: 2rem;
+    right: 2.05rem;
 }
 
 .right-full {
@@ -994,6 +994,7 @@ input[type=range] {
     appearance: none;
     width: 100%;
     background: transparent;
+    touch-action: pan-y;
 }
 
 input[type=range]::-webkit-slider-thumb {
@@ -1102,9 +1103,22 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 .force-dark-dropdown .custom-select {
-    background-color: #1E1E1E !important;
-    color: #E0E0E0 !important;
-    border: 1px solid rgba(128, 128, 128, 0.5) !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--select-bg);
+    color: var(--text-color);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: 1px solid transparent;
+    max-width: 100%;
+    user-select: none;
+}
+
+.force-dark-dropdown .custom-select:hover {
+    background-color: var(--select-hover-bg);
 }
 
 .force-dark-dropdown .custom-select-options {
@@ -1113,6 +1127,22 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 .force-dark-dropdown .custom-option.selected {
+    background-color: var(--select-hover-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.force-dark-dropdown-pose .custom-select {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+    border: 1px solid rgba(128, 128, 128, 0.5) !important;
+}
+
+.force-dark-dropdown-pose .custom-select-options {
+    background-color: #1E1E1E !important;
+    border: none !important;
+}
+
+.force-dark-dropdown-pose .custom-option.selected {
     background-color: var(--select-hover-bg) !important;
     color: var(--text-color) !important;
 }
