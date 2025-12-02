@@ -44,6 +44,8 @@ This application is a web-based tool designed to load, modify, and animate VRM 3
 * **Node.js**: Required for package management and running the dev server.
 * **Web Browser**: A modern browser with WebGL support (Chrome, Edge, Firefox, etc.).
 
+**For testing, please click the following link: [https://vrm-body-modifier.vercel.app/](https://vrm-body-modifier.vercel.app/) (for a better experience, this page currently supports desktop and laptop versions only.).**
+
 ## Additional Notes
 * **Three.js** - The core 3D library used for rendering.
 * **@pixiv/three-vrm** - Official library for handling VRM files.
