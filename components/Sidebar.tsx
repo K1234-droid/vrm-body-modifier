@@ -39,7 +39,7 @@ interface SliderGroupProps {
 const SliderGroup: React.FC<SliderGroupProps> = ({ title, children, className }) => (
   <div className={`mb-6 ${className || ''}`}>
     <h4 className="sub-judul">{title}</h4>
-    <div className="space-y-5">
+    <div>
       {children}
     </div>
   </div>
@@ -52,10 +52,11 @@ interface SliderProps {
   max?: number;
   step?: number;
   onChange: (val: number) => void;
+  className?: string;
 }
 
-const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, step = 0.01, onChange }) => (
-  <div className="flex flex-col gap-2">
+const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, step = 0.01, onChange, className }) => (
+  <div className={`flex flex-col gap-2 mb-5 ${className || ''}`}>
     <div className="flex justify-between items-center">
       <span className="modal-label !mb-0">{label}</span>
       <span className="value-badge">
@@ -196,21 +197,21 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
       <div className="modal-body no-pt custom-scrollbar">
 
         { }
-        <div className="mb-4">
-          <h4 className="sub-judul sub-judul-nomargin">
+        <div className="mb-6">
+          <h4 className="sub-judul">
             {t.canvasView}{isCameraMode ? `: ${cameraRatio === 'Custom' ? t.custom : cameraRatio}` : ''}
           </h4>
           {backgroundImage ? (
             <button
               onClick={() => setBackgroundImage(null)}
-              className="modal-save-btn w-full mt-2"
+              className={`modal-save-btn w-full mt-2 mb-3 ${isCameraMode ? 'mb-1' : ''}`}
             >
               {t.removeBackground}
             </button>
           ) : (
             <div className="switch-container">
               <label
-                className="switch-label cursor-pointer select-none font-medium"
+                className="switch-label cursor-pointer select-none"
                 onClick={onToggleDarkMode}
                 htmlFor="dark-mode-toggle"
               >
@@ -232,7 +233,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
             <>
               <div className="switch-container">
                 <label
-                  className="switch-label cursor-pointer select-none font-medium"
+                  className="switch-label cursor-pointer select-none"
                   onClick={() => setIsTransparent(!isTransparent)}
                 >
                   {t.transparent}
@@ -249,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
               {cameraRatio !== 'Custom' && (
                 <div className="switch-container">
-                  <span className="switch-label font-medium">{t.resolution}</span> { }
+                  <span className="switch-label">{t.resolution}</span> { }
                   { }
                   <Select
                     label={t.resolution}
@@ -262,14 +263,14 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                       { label: '8K (4320p)', value: '8K' },
                     ]}
                     onChange={(val) => setResolutionPreset(val as any)}
-                    className="!mb-0 w-[140px]"
+                    className="!mb-0 w-140"
                   />
                 </div>
               )}
 
               {cameraRatio === 'Custom' && (
                 <div className="flex gap-3 mt-4 mb-6">
-                  <div className="flex flex-col gap-3 w-1/2">
+                  <div className="flex flex-col gap-3 w-1-2">
                     <label className="modal-label !mb-0">{t.width}</label>
                     <input
                       type="number"
@@ -278,7 +279,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                       onChange={(e) => setCustomResolution({ ...customResolution, width: parseInt(e.target.value) || 0 })}
                     />
                   </div>
-                  <div className="flex flex-col gap-3 w-1/2">
+                  <div className="flex flex-col gap-3 w-1-2">
                     <label className="modal-label !mb-0">{t.height}</label>
                     <input
                       type="number"
@@ -293,24 +294,22 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
           )}
         </div>
 
-        <SliderGroup title={t.groups.expression} className={isCameraMode ? "!mb-0" : "mb-6"}>
-          <div className="mb-4">
-            <div className="switch-container">
-              <label
-                className="switch-label cursor-pointer select-none font-medium"
-                onClick={() => setAutoBlink(!autoBlink)}
-              >
-                {t.params.autoBlink}
-              </label>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={autoBlink}
-                  onChange={(e) => setAutoBlink(e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
+        <SliderGroup title={t.groups.expression} className={isCameraMode ? "!mb-0" : "mb-6 mt-4"}>
+          <div className="switch-container mb-4">
+            <label
+              className="switch-label cursor-pointer select-none"
+              onClick={() => setAutoBlink(!autoBlink)}
+            >
+              {t.params.autoBlink}
+            </label>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={autoBlink}
+                onChange={(e) => setAutoBlink(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </label>
           </div>
           <Slider label={t.params.expNeutral} value={params.expNeutral} min={0} max={1} step={0.01} onChange={(v) => onChange('expNeutral', v)} />
           <Slider label={t.params.expHappy} value={params.expHappy} min={0} max={1} step={0.01} onChange={(v) => onChange('expHappy', v)} />
@@ -329,7 +328,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
           <Slider label={t.params.expLookUp} value={params.expLookUp} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookUp', v)} />
           <Slider label={t.params.expLookDown} value={params.expLookDown} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookDown', v)} />
           <Slider label={t.params.expLookLeft} value={params.expLookLeft} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookLeft', v)} />
-          <Slider label={t.params.expLookRight} value={params.expLookRight} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookRight', v)} />
+          <Slider label={t.params.expLookRight} value={params.expLookRight} min={0} max={1} step={0.01} onChange={(v) => onChange('expLookRight', v)} className="!mb-8" />
 
           {vrm && vrm.expressionManager && vrm.expressionManager.expressions.map((expression) => {
             const name = expression.expressionName;
@@ -358,60 +357,63 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
 
 
-        {!isCameraMode && (
-          <>
-            <SliderGroup title={t.groups.headNeck}>
-              <Slider label={t.params.headSize} value={params.headSize} onChange={(v) => onChange('headSize', v)} />
-              <Slider label={t.params.neckWidth} value={params.neckWidth} onChange={(v) => onChange('neckWidth', v)} />
-              <Slider label={t.params.neckHeight} value={params.neckHeight} onChange={(v) => onChange('neckHeight', v)} />
-            </SliderGroup>
+        {
+          !isCameraMode && (
+            <>
+              <SliderGroup title={t.groups.headNeck} className="mt-6">
+                <Slider label={t.params.headSize} value={params.headSize} onChange={(v) => onChange('headSize', v)} className="mt-5" />
+                <Slider label={t.params.neckWidth} value={params.neckWidth} onChange={(v) => onChange('neckWidth', v)} />
+                <Slider label={t.params.neckHeight} value={params.neckHeight} onChange={(v) => onChange('neckHeight', v)} />
+              </SliderGroup>
 
-            <SliderGroup title={t.groups.upperBody}>
-              <Slider label={t.params.shoulderWidth} value={params.shoulderWidth} onChange={(v) => onChange('shoulderWidth', v)} />
-              <Slider label={t.params.chestSize} value={params.chestSize} onChange={(v) => onChange('chestSize', v)} />
-              <Slider label={t.params.stomachSize} value={params.stomachSize} onChange={(v) => onChange('stomachSize', v)} />
-              <Slider label={t.params.torsoHeight} value={params.torsoHeight} onChange={(v) => onChange('torsoHeight', v)} />
-              <Slider label={t.params.waistWidth} value={params.waistWidth} onChange={(v) => onChange('waistWidth', v)} />
-              <Slider label={t.params.hipSize} value={params.hipSize} onChange={(v) => onChange('hipSize', v)} />
-            </SliderGroup>
+              <SliderGroup title={t.groups.upperBody} className="mt-6">
+                <Slider label={t.params.shoulderWidth} value={params.shoulderWidth} onChange={(v) => onChange('shoulderWidth', v)} className="mt-5" />
+                <Slider label={t.params.chestSize} value={params.chestSize} onChange={(v) => onChange('chestSize', v)} />
+                <Slider label={t.params.stomachSize} value={params.stomachSize} onChange={(v) => onChange('stomachSize', v)} />
+                <Slider label={t.params.torsoHeight} value={params.torsoHeight} onChange={(v) => onChange('torsoHeight', v)} />
+                <Slider label={t.params.waistWidth} value={params.waistWidth} onChange={(v) => onChange('waistWidth', v)} />
+                <Slider label={t.params.hipSize} value={params.hipSize} onChange={(v) => onChange('hipSize', v)} />
+              </SliderGroup>
 
-            <SliderGroup title={t.groups.armsHands}>
-              <Slider label={t.params.armLength} value={params.armLength} onChange={(v) => onChange('armLength', v)} />
-              <Slider label={t.params.armMuscle} value={params.armMuscle} onChange={(v) => onChange('armMuscle', v)} />
-              <Slider label={t.params.forearmSize} value={params.forearmSize} onChange={(v) => onChange('forearmSize', v)} />
-              <Slider label={t.params.handSize} value={params.handSize} onChange={(v) => onChange('handSize', v)} />
-              <Slider label={t.params.fingerSize} value={params.fingerSize} onChange={(v) => onChange('fingerSize', v)} />
-            </SliderGroup>
+              <SliderGroup title={t.groups.armsHands} className="mt-6">
+                <Slider label={t.params.armLength} value={params.armLength} onChange={(v) => onChange('armLength', v)} className="mt-5" />
+                <Slider label={t.params.armMuscle} value={params.armMuscle} onChange={(v) => onChange('armMuscle', v)} />
+                <Slider label={t.params.forearmSize} value={params.forearmSize} onChange={(v) => onChange('forearmSize', v)} />
+                <Slider label={t.params.handSize} value={params.handSize} onChange={(v) => onChange('handSize', v)} />
+                <Slider label={t.params.fingerSize} value={params.fingerSize} onChange={(v) => onChange('fingerSize', v)} />
+              </SliderGroup>
 
-            <SliderGroup title={t.groups.legs} className="!mb-0">
-              <Slider label={t.params.legLength} value={params.legLength} onChange={(v) => onChange('legLength', v)} />
-              <Slider label={t.params.thighSize} value={params.thighSize} onChange={(v) => onChange('thighSize', v)} />
-              <Slider label={t.params.calfSize} value={params.calfSize} onChange={(v) => onChange('calfSize', v)} />
-              <Slider label={t.params.footSize} value={params.footSize} onChange={(v) => onChange('footSize', v)} />
-              <Slider label={t.params.toeSize} value={params.toeSize} onChange={(v) => onChange('toeSize', v)} />
-            </SliderGroup>
-          </>
-        )}
-      </div>
+              <SliderGroup title={t.groups.legs} className="mt-6">
+                <Slider label={t.params.legLength} value={params.legLength} onChange={(v) => onChange('legLength', v)} className="mt-5" />
+                <Slider label={t.params.thighSize} value={params.thighSize} onChange={(v) => onChange('thighSize', v)} />
+                <Slider label={t.params.calfSize} value={params.calfSize} onChange={(v) => onChange('calfSize', v)} />
+                <Slider label={t.params.footSize} value={params.footSize} onChange={(v) => onChange('footSize', v)} />
+                <Slider label={t.params.toeSize} value={params.toeSize} onChange={(v) => onChange('toeSize', v)} />
+              </SliderGroup>
+            </>
+          )
+        }
+      </div >
 
       { }
-      <div className="modal-footer-actions">
-        {isCameraMode ? (
-          <button
-            onClick={() => onSave(isTransparent ? 'png' : 'jpg')}
-            className="modal-save-btn w-full"
-          >
-            {isTransparent ? t.saveAsPng : t.saveAsJpg}
-          </button>
-        ) : (
-          <button
-            onClick={onReset}
-            className="modal-save-btn w-full"
-          >
-            {t.resetParams}
-          </button>
-        )}
-      </div>
+      < div className="modal-footer-actions" >
+        {
+          isCameraMode ? (
+            <button
+              onClick={() => onSave(isTransparent ? 'png' : 'jpg')}
+              className="modal-save-btn w-full"
+            >
+              {isTransparent ? t.saveAsPng : t.saveAsJpg}
+            </button >
+          ) : (
+            <button
+              onClick={onReset}
+              className="modal-save-btn w-full"
+            >
+              {t.resetParams}
+            </button>
+          )}
+      </div >
     </div >
   );
 };

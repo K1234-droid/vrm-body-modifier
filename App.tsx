@@ -185,7 +185,7 @@ const App: React.FC = () => {
         {isLoading && (
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
-            <p className="font-semibold animate-pulse text-[var(--text-color)]">{t.processing}</p>
+            <p className="font-semibold animate-pulse text-color-primary">{t.processing}</p>
           </div>
         )}
 
@@ -215,7 +215,7 @@ const App: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mt-8 mx-auto p-3 max-w-[400px] rounded-lg bg-red-900/30 border border-red-800 text-red-200 text-sm">
+            <div className="mt-8 mx-auto p-3 rounded-lg bg-red-900-30 border border-red-800 text-red-200 text-sm" style={{ maxWidth: '400px' }}>
               {(t as any)[error] || error}
             </div>
           )}
@@ -255,7 +255,7 @@ const App: React.FC = () => {
         {isLoading && (
           <div className="loading-overlay" style={{ zIndex: 9999 }}>
             <div className="loading-spinner"></div>
-            <p className="font-semibold animate-pulse text-[var(--text-color)]">{t.processing}</p>
+            <p className="font-semibold animate-pulse text-color-primary">{t.processing}</p>
           </div>
         )}
 

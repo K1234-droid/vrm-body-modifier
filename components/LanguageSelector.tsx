@@ -43,7 +43,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLangua
 
     return (
         <div
-            className={`custom-select-container min-w-[140px] ${className}`}
+            className={`custom-select-container min-w-140 ${className}`}
             ref={dropdownRef}
         >
             <div

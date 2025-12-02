@@ -1343,12 +1343,12 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
               onPointerUp={(e) => e.currentTarget.releasePointerCapture(e.pointerId)}
             >
               { }
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-300 -translate-y-1/2"></div>
-              <div className="absolute top-0 left-1/2 w-0.5 h-full bg-gray-300 -translate-x-1/2"></div>
+              <div className="absolute top-1-2 left-0 w-full h-0.5 bg-gaze-dark -translate-y-1-2"></div>
+              <div className="absolute top-0 left-1-2 w-0.5 h-full bg-gaze-dark -translate-x-1-2"></div>
 
-              { }
+              {/* Control Point */}
               <div
-                className="absolute w-4 h-4 bg-transparent border-2 border-black rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                className="absolute w-4 h-4 bg-gaze-dark rounded-full -translate-1-2 pointer-events-none"
                 style={{
                   left: `${(gazePosition.x + 1) * 50}%`,
                   top: `${(-gazePosition.y + 1) * 50}%`
@@ -1364,7 +1364,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
           { }
           <div className="absolute top-4 right-4 z-50">
             <div
-              className="custom-select-container w-[140px] force-dark-dropdown"
+              className="custom-select-container w-140 force-dark-dropdown"
               tabIndex={-1}
               onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsPoseDropdownOpen(false); }}
             >
@@ -1426,7 +1426,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
             <div className="flex flex-col items-center gap-1">
               <button onClick={() => setCameraView('y')} className="gizmo-btn gizmo-btn-lg gizmo-btn-primary">Y</button>
               <div className="flex gap-2 relative">
-                <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-full mr-3 top-1-2 -translate-y-1-2">
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="gizmo-btn group"
