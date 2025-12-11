@@ -729,6 +729,7 @@ h3 {
     transition: border-color 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
     white-space: nowrap;
+    user-select: none;
 }
 
 .nav-tab-btn:first-child {
@@ -1467,6 +1468,26 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 /* ==================== RESPONSIVE DESIGN ==================== */
+@media (max-width: 954px) {
+    .btn-text {
+        display: none;
+    }
+}
+
+.btn-icon-responsive {
+    display: none;
+}
+
+@media (max-width: 954px) {
+    .btn-icon-responsive {
+        display: block;
+    }
+
+    .modal-secondary-btn {
+        padding: 12.5px 18px;
+    }
+}
+
 .sidebar-close-btn {
     display: none;
     background: none;
@@ -1525,7 +1546,7 @@ input[type=range]::-webkit-slider-runnable-track {
     }
 
     .modal-header {
-        padding: 0.9rem 1.5rem;
+        padding: 0.95rem 1.5rem;
         align-items: center;
     }
 
@@ -1540,7 +1561,7 @@ input[type=range]::-webkit-slider-runnable-track {
     }
 
     .modal-nav-tabs {
-        margin-top: 0rem;
+        margin-top: -0.05rem;
     }
 
     .helper-box {
@@ -1555,26 +1576,6 @@ input[type=range]::-webkit-slider-runnable-track {
 .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-}
-
-@media (max-width: 954px) {
-    .btn-text {
-        display: none;
-    }
-}
-
-.btn-icon-responsive {
-    display: none;
-}
-
-@media (max-width: 954px) {
-    .btn-icon-responsive {
-        display: block;
-    }
-
-    .modal-secondary-btn {
-        padding: 12.5px 18px;
-    }
 }
 
 @media (max-width: 865px) {
@@ -1725,4 +1726,23 @@ input[type=range]::-webkit-slider-runnable-track {
 .gaze-controller-styled-menu,
 .eye-menu-container {
     z-index: 900 !important;
+}
+
+/* ==================== TOUCH SCREEN DEVICES ==================== */
+button,
+a,
+input,
+textarea,
+.nav-tab-btn,
+.custom-select,
+.modal-save-btn,
+.modal-secondary-btn,
+.modal-danger-btn,
+.sidebar-close-btn,
+.sidebar-toggle-btn,
+.gizmo-btn,
+.switch,
+.slider {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
 }
