@@ -7,7 +7,12 @@ export const translations = {
         errorLoad: "Gagal memuat file VRM. Pastikan file valid.",
         errorModificationProhibited: "Pembuat model ini melarang modifikasi. File ditolak.",
         version: "Versi Website",
-        bodyParams: "Parameter",
+        bodyParams: "Editor",
+        nav: {
+            body: "Tubuh",
+            display: "Tampilan",
+            displayResolution: "Tampilan & Resolusi"
+        },
         canvasView: "Tampilan Kanvas",
         darkMode: "Tema Gelap",
         resetParams: "Reset Parameter",
@@ -36,7 +41,8 @@ export const translations = {
             upperBody: "Tubuh Bagian Atas",
             armsHands: "Tangan & Lengan",
             legs: "Kaki",
-            expression: "Ekspresi"
+            expression: "Ekspresi",
+            eyes: "Mata"
         },
         poses: {
             tPose: "T-Pose",
@@ -64,7 +70,7 @@ export const translations = {
             calfSize: "Ukuran Betis",
             footSize: "Ukuran Telapak Kaki",
             toeSize: "Ukuran Jari Kaki",
-            autoBlink: "Mata Berkedip Otomatis",
+            autoBlink: "Berkedip Otomatis",
 
             expNeutral: "Netral",
             expHappy: "Senang",
@@ -98,7 +104,12 @@ export const translations = {
         errorLoad: "Failed to load VRM file. Please ensure the file is valid.",
         errorModificationProhibited: "The creator of this model prohibits modification. File rejected.",
         version: "Website Version",
-        bodyParams: "Parameters",
+        bodyParams: "Editor",
+        nav: {
+            body: "Body",
+            display: "Display",
+            displayResolution: "Display & Resolution"
+        },
         canvasView: "Canvas View",
         darkMode: "Dark Theme",
         resetParams: "Reset Parameters",
@@ -127,7 +138,8 @@ export const translations = {
             upperBody: "Upper Body",
             armsHands: "Arms & Hands",
             legs: "Legs",
-            expression: "Expression"
+            expression: "Expression",
+            eyes: "Eyes"
         },
         poses: {
             tPose: "T-Pose",

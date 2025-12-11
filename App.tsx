@@ -76,8 +76,31 @@ const App: React.FC = () => {
     setParams((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const handleReset = useCallback(() => {
-    setParams(DEFAULT_PARAMETERS);
+  const handleReset = useCallback((target: 'expression' | 'body') => {
+    setParams((prev) => {
+      const newParams = { ...prev };
+      const keys = Object.keys(DEFAULT_PARAMETERS) as Array<keyof BodyParameters>;
+
+      keys.forEach((key) => {
+        const isExpressionParam = key.startsWith('exp') || key === 'customExpressions';
+
+        if (target === 'expression') {
+          if (isExpressionParam) {
+            newParams[key] = DEFAULT_PARAMETERS[key] as any;
+          }
+        } else if (target === 'body') {
+          if (!isExpressionParam) {
+            newParams[key] = DEFAULT_PARAMETERS[key] as any;
+          }
+        }
+      });
+
+      return newParams;
+    });
+
+    if (target === 'expression') {
+      setAutoBlink(false);
+    }
   }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

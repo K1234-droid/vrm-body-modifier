@@ -278,6 +278,10 @@ body.light-theme {
     margin-bottom: 2.05rem;
 }
 
+.mb-9 {
+    margin-bottom: 0.50rem;
+}
+
 .mx-auto {
     margin-left: auto;
     margin-right: auto;
@@ -691,6 +695,76 @@ h3 {
     border-top: 1px solid rgba(128, 128, 128, 0.2);
     background-color: var(--modal-bg-color);
     flex-shrink: 0;
+}
+
+.modal-nav-tabs {
+    display: flex;
+    white-space: nowrap;
+    padding: 0 1.5rem;
+    margin-bottom: 0;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    margin-top: -0.15rem;
+}
+
+.modal-nav-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 1.1rem 0rem;
+    padding-top: 0.4rem;
+    padding-bottom: 1.05rem;
+    margin: 0 0.6rem;
+    cursor: pointer;
+    font-family: "Poppins", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #E0E0E0;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.nav-tab-btn:first-child {
+    margin-left: 0;
+}
+
+.nav-tab-btn:last-child {
+    margin-right: 0;
+}
+
+.nav-tab-btn.active {
+    color: #FAFAFA;
+    border-bottom-color: #FAFAFA;
+}
+
+.nav-tab-btn:not(.active) {
+    opacity: 0.7;
+}
+
+.nav-tab-btn:not(.active):hover {
+    opacity: 1;
+}
+
+.tab-content {
+    animation: fadeIn 0.2s ease-in-out;
+    padding-top: 0.5rem;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-save-btn {
@@ -1393,28 +1467,6 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 /* ==================== RESPONSIVE DESIGN ==================== */
-.sidebar-toggle-btn {
-    display: none;
-    position: fixed;
-    bottom: 1rem;
-    left: 1rem;
-    background: var(--modal-bg-color);
-    border: none;
-    color: var(--text-color);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 13px 19.5px;
-    border-radius: 8px;
-    line-height: 1;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
-    opacity: 0.8;
-}
-
-.sidebar-toggle-btn:hover {
-    background-color: var(--select-hover-bg);
-    opacity: 1;
-}
-
 .sidebar-close-btn {
     display: none;
     background: none;
@@ -1440,8 +1492,8 @@ input[type=range]::-webkit-slider-runnable-track {
         bottom: 0;
         width: 100%;
         max-width: 380px;
-        height: auto;
-        max-height: 50vh;
+        height: 55vh;
+        max-height: 55vh;
         border-top-left-radius: 12px;
         border-top-right-radius: 12px;
         border-bottom-left-radius: 0;
@@ -1485,6 +1537,10 @@ input[type=range]::-webkit-slider-runnable-track {
         overflow: hidden;
         text-overflow: ellipsis;
         display: block !important;
+    }
+
+    .modal-nav-tabs {
+        margin-top: 0rem;
     }
 
     .helper-box {
