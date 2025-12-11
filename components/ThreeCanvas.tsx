@@ -334,7 +334,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       rendererRef.current.domElement.style.height = '100%';
 
       rendererRef.current.setPixelRatio(window.devicePixelRatio);
-      rendererRef.current.setSize(w, h, true);
+      rendererRef.current.setSize(w, h, false);
 
       cameraRef.current.aspect = w / h;
       cameraRef.current.updateProjectionMatrix();
@@ -352,6 +352,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
         sceneRef.current.background.repeat.y = factor > 1 ? 1 : factor;
       }
     }
+
+    rendererRef.current.render(sceneRef.current, cameraRef.current);
   }, []);
 
   useEffect(() => {
@@ -663,7 +665,9 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
 
   useEffect(() => {
-    const resizeObserver = new ResizeObserver(() => handleResize());
+    const resizeObserver = new ResizeObserver(() => {
+      window.requestAnimationFrame(() => handleResize());
+    });
     if (mountRef.current?.parentElement) {
       resizeObserver.observe(mountRef.current.parentElement);
     }
@@ -1202,12 +1206,15 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     const scene = sceneRef.current;
     if (!scene) return;
 
+    isCameraModeRef.current = isCameraMode;
+
     if (transformControlsRef.current) {
       const helper = transformControlsRef.current.getHelper();
       if (isCameraMode) {
         transformControlsRef.current.detach();
         transformControlsRef.current.enabled = false;
         scene.remove(helper);
+        selectedBoneRef.current = null;
       } else {
         transformControlsRef.current.enabled = true;
         scene.add(helper);
