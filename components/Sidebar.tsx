@@ -164,7 +164,17 @@ const EXPRESSIONS = [
   { label: 'Look Right', value: 'lookRight' },
 ];
 
-type ActiveTab = 'expression' | 'body' | 'display';
+type ActiveTab = 'expression' | 'body' | 'display' | 'fileInfo';
+
+const MetaInfoRow: React.FC<{ label: string; value?: string }> = ({ label, value }) => {
+  if (!value) return null;
+  return (
+    <div className="file-info-item">
+      <span className="file-info-label">{label}</span>
+      <span className="file-info-value select-text">{value}</span>
+    </div>
+  );
+};
 
 const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('expression');
@@ -173,12 +183,13 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
   const scrollPositions = React.useRef<Record<ActiveTab, number>>({
     expression: 0,
     body: 0,
-    display: 0
+    display: 0,
+    fileInfo: 0
   });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (scrollContainerRef.current) {
-      if (isCameraMode && activeTab === 'body') return;
+      if (isCameraMode && (activeTab === 'body' || activeTab === 'fileInfo')) return;
       scrollPositions.current[activeTab] = e.currentTarget.scrollTop;
     }
   };
@@ -220,10 +231,76 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
   }, [isOpen, onClose]);
 
   React.useEffect(() => {
-    if (isCameraMode && activeTab === 'body') {
+    if (isCameraMode && (activeTab === 'body' || activeTab === 'fileInfo')) {
       setActiveTab('expression');
     }
   }, [isCameraMode, activeTab]);
+
+  const translateMetaValue = (value: string | undefined) => {
+    if (!value) return undefined;
+
+    const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const val = t.fileInfo.values;
+
+    switch (normalized) {
+      case 'onlyauthor': return val.onlyAuthor;
+      case 'explicitlylicensedperson':
+      case 'onlyseparatelylicensedperson': return val.explicitlyLicensedPerson;
+      case 'everyone': return val.everyone;
+      case 'allow': return val.allow;
+      case 'disallow': return val.disallow;
+      case 'personalnonprofit': return val.personalNonProfit;
+      case 'personalprofit': return val.personalProfit;
+      case 'corporation': return val.corporation;
+      case 'redistributionprohibited': return val.redistributionProhibited;
+      case 'cc0': return val.cc0;
+      case 'ccby': return val.ccBy;
+      case 'ccbync': return val.ccByNc;
+      case 'ccbysa': return val.ccBySa;
+      case 'ccbyncsa': return val.ccByNcSa;
+      case 'ccbynd': return val.ccByNd;
+      case 'ccbyncnd': return val.ccByNcNd;
+      case 'other': return val.other;
+      case 'seeotherlicense': return val.seeOtherLicense;
+      case 'required': return val.required;
+      case 'unnecessary': return val.unnecessary;
+      case 'prohibited': return val.prohibited;
+      case 'allowmodification': return val.allowModification;
+      case 'allowmodificationredistribution': return val.allowModificationRedistribution;
+      default: return value;
+    }
+  };
+
+  const getMeta = () => {
+    if (!vrm || !vrm.meta) return null;
+    const meta = vrm.meta as any;
+    const isV1 = meta.metaVersion === '1';
+
+    return {
+      title: isV1 ? meta.name : meta.title,
+      version: meta.version,
+      author: isV1 ? meta.authors?.join(', ') : meta.author,
+      contact: meta.contactInformation,
+      reference: isV1 ? meta.references?.join(', ') : meta.reference,
+      allowedUser: isV1 ? meta.avatarPermission : meta.allowedUserName,
+      violent: isV1 ? (meta.allowExcessivelyViolentUsage ? 'Allow' : 'Disallow') : meta.violentUssageName,
+      sexual: isV1 ? (meta.allowExcessivelySexualUsage ? 'Allow' : 'Disallow') : meta.sexualUssageName,
+      commercial: isV1 ? meta.commercialUsage : meta.commercialUssageName,
+      licenseName: isV1 ? 'See Other License' : meta.licenseName,
+      otherLicenseUrl: meta.otherLicenseUrl,
+
+      attribution: isV1 ? meta.creditNotation : undefined,
+      alterations: isV1 ? meta.modification : undefined,
+      politicalReligious: isV1 ? (meta.allowPoliticalOrReligiousUsage ? 'Allow' : 'Disallow') : undefined,
+      antisocialHate: isV1 ? (meta.allowAntisocialOrHateUsage ? 'Allow' : 'Disallow') : undefined,
+      copyright: isV1 ? meta.copyrightInformation : undefined,
+      thirdPartyLicenses: isV1 ? meta.thirdPartyLicenses : undefined,
+
+      otherPermissionUrl: !isV1 ? meta.otherPermissionUrl : undefined,
+    };
+  };
+
+  const metaData = getMeta();
 
   return (
     <div className={`sidebar-container ${isOpen ? 'open' : ''} ${isAnimating ? 'animating' : ''}`}>
@@ -264,6 +341,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         >
           {t.groups.expression}
         </button>
+
         {!isCameraMode && (
           <button
             className={`nav-tab-btn ${activeTab === 'body' ? 'active' : ''}`}
@@ -272,12 +350,22 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
             {t.nav.body}
           </button>
         )}
+
         <button
           className={`nav-tab-btn ${activeTab === 'display' ? 'active' : ''}`}
           onClick={() => setActiveTab('display')}
         >
           {isCameraMode ? t.nav.displayResolution : t.nav.display}
         </button>
+
+        {!isCameraMode && (
+          <button
+            className={`nav-tab-btn ${activeTab === 'fileInfo' ? 'active' : ''}`}
+            onClick={() => setActiveTab('fileInfo')}
+          >
+            {t.nav.fileInfo}
+          </button>
+        )}
       </div>
 
       <div
@@ -488,9 +576,135 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
             </SliderGroup>
           </div>
         )}
+
+        { }
+        {activeTab === 'fileInfo' && !isCameraMode && metaData && (
+          <div className="tab-content mt-4">
+            { }
+            <div className="file-info-section">
+              <h4 className="sub-judul mt-0">{t.fileInfo.metaTitle}</h4>
+              <div>
+                <MetaInfoRow label={t.fileInfo.title} value={metaData.title} />
+                <MetaInfoRow label={t.fileInfo.version} value={metaData.version} />
+                <MetaInfoRow label={t.fileInfo.author} value={metaData.author} />
+                <MetaInfoRow label={t.fileInfo.contact} value={metaData.contact} />
+                <MetaInfoRow label={t.fileInfo.reference} value={metaData.reference} />
+              </div>
+            </div>
+
+            { }
+            <div className="file-info-section">
+              <div className="file-info-section:last-child mb-0"></div>
+              <h4 className="sub-judul" style={{ marginTop: '2rem' }}>
+                {t.fileInfo.licenseTitle}
+              </h4>
+              <div>
+                <MetaInfoRow
+                  label={t.fileInfo.allowedUser}
+                  value={translateMetaValue(metaData.allowedUser)}
+                />
+
+                <MetaInfoRow
+                  label={t.fileInfo.attribution}
+                  value={translateMetaValue(metaData.attribution)}
+                />
+                <MetaInfoRow
+                  label={t.fileInfo.alterations}
+                  value={translateMetaValue(metaData.alterations)}
+                />
+
+                <MetaInfoRow
+                  label={t.fileInfo.commercialUsage}
+                  value={translateMetaValue(metaData.commercial)}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <MetaInfoRow
+                    label={t.fileInfo.violentUsage}
+                    value={translateMetaValue(metaData.violent)}
+                  />
+                  <MetaInfoRow
+                    label={t.fileInfo.sexualUsage}
+                    value={translateMetaValue(metaData.sexual)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <MetaInfoRow
+                    label={t.fileInfo.politicalReligious}
+                    value={translateMetaValue(metaData.politicalReligious)}
+                  />
+                  <MetaInfoRow
+                    label={t.fileInfo.antisocialHate}
+                    value={translateMetaValue(metaData.antisocialHate)}
+                  />
+                </div>
+
+                <MetaInfoRow
+                  label={t.fileInfo.copyright}
+                  value={metaData.copyright}
+                />
+
+                <MetaInfoRow
+                  label={t.fileInfo.licenseName}
+                  value={translateMetaValue(metaData.licenseName)}
+                />
+
+                <MetaInfoRow
+                  label={t.fileInfo.thirdPartyLicenses}
+                  value={metaData.thirdPartyLicenses}
+                />
+
+                {(() => {
+                  const normalized = metaData.licenseName?.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  const isOther = normalized === 'seeotherlicense' || normalized === 'other';
+
+                  if (metaData.otherLicenseUrl) {
+                    return (
+                      <div className="file-info-item">
+                        <span className="file-info-label">{t.fileInfo.otherLicense}</span>
+                        <a
+                          href={metaData.otherLicenseUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="file-info-value file-info-link"
+                        >
+                          {metaData.otherLicenseUrl}
+                        </a>
+                      </div>
+                    );
+                  } else if (isOther) {
+                    return (
+                      <MetaInfoRow
+                        label={t.fileInfo.otherLicense}
+                        value="-"
+                      />
+                    );
+                  }
+                  return null;
+                })()}
+
+                { }
+                {metaData.otherPermissionUrl && (
+                  <div className="file-info-item">
+                    <span className="file-info-label">{t.fileInfo.otherPermissionUrl}</span>
+                    <a
+                      href={metaData.otherPermissionUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="file-info-value file-info-link"
+                    >
+                      {metaData.otherPermissionUrl}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {(isCameraMode || activeTab !== 'display') && (
+      {(isCameraMode || (activeTab !== 'display' && activeTab !== 'fileInfo')) && (
         <div className="modal-footer-actions">
           {isCameraMode ? (
             <button

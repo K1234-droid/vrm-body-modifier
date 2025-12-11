@@ -1467,6 +1467,51 @@ input[type=range]::-webkit-slider-runnable-track {
     border: 1px solid var(--gaze-border-color) !important;
 }
 
+/* ==================== FILE INFO STYLES ==================== */
+.file-info-section {
+    margin-bottom: 1.5rem;
+}
+
+.file-info-section:last-of-type {
+    margin-bottom: 2rem;
+}
+
+.file-info-item {
+    margin-bottom: 1rem;
+}
+
+.file-info-label {
+    font-size: 1rem;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+    display: block;
+    font-weight: 400;
+}
+
+.file-info-value {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+.file-info-link {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.file-info-link:hover {
+    text-decoration: underline;
+}
+
+body:not(.light-theme) .file-info-link {
+    color: var(--text-color);
+}
+
 /* ==================== RESPONSIVE DESIGN ==================== */
 @media (max-width: 954px) {
     .btn-text {
