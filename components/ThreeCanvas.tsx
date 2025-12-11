@@ -31,6 +31,7 @@ interface ThreeCanvasProps {
   isTransparent: boolean;
   saveTrigger: { format: 'png' | 'jpg', timestamp: number } | null;
   onSaveComplete: () => void;
+  onToggleSidebar: () => void;
 }
 
 type PoseType = 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
@@ -57,7 +58,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   customResolution,
   isTransparent,
   saveTrigger,
-  onSaveComplete
+  onSaveComplete,
+  onToggleSidebar
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>(0);
@@ -1281,7 +1283,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   };
 
   return (
-    <div className="full-absolute bg-transparent">
+    <div className={`full-absolute bg-transparent ${isPoseDropdownOpen ? 'pose-dropdown-open' : ''}`}>
       <div ref={mountRef} className="full-absolute" />
 
       {eyeMenu && eyeMenu.visible && !isPlaying && !isCameraMode && (
@@ -1362,7 +1364,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       {vrm && (
         <>
           { }
-          <div className="absolute top-4 right-4 z-50">
+          <div className="absolute top-4 right-4 z-50 flex gap-3">
             <div
               className="custom-select-container w-140 force-dark-dropdown-pose"
               tabIndex={-1}
@@ -1381,6 +1383,14 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
                 ))}
               </div>
             </div>
+
+            <button
+              onClick={onToggleSidebar}
+              className="sidebar-toggle-btn force-dark-style shadow-lg"
+              aria-label="Open Sidebar"
+            >
+              ☰
+            </button>
           </div>
 
           { }

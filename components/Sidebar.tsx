@@ -28,6 +28,8 @@ interface SidebarProps {
   isTransparent: boolean;
   setIsTransparent: (val: boolean) => void;
   onSave: (format: 'png' | 'jpg') => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 interface SliderGroupProps {
@@ -98,18 +100,19 @@ const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displa
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && isOpen) {
         setIsOpen(false);
+        event.stopPropagation();
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, []);
+  }, [isOpen]);
 
   const selectedLabel = displayLabel || options.find(o => o.value === value)?.label || value;
 
@@ -161,35 +164,77 @@ const EXPRESSIONS = [
   { label: 'Look Right', value: 'lookRight' },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave }) => {
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose }) => {
   if (!isFileLoaded) {
     return null;
   }
 
   const t = translations[language];
 
+  const [isAnimating, setIsAnimating] = React.useState(false);
+  const isFirstRender = React.useRef(true);
+
+  React.useLayoutEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIsAnimating(true);
+    const timer = setTimeout(() => setIsAnimating(false), 300);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen && onClose) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
-    <div className="sidebar-container">
+    <div className={`sidebar-container ${isOpen ? 'open' : ''} ${isAnimating ? 'animating' : ''}`}>
       { }
       <div className="modal-header">
         <h3>{isCameraMode ? t.cameraMode : t.bodyParams}</h3>
         {isCameraMode ? (
-          <Select
-            label={t.ratio}
-            displayLabel={t.ratio}
-            value={cameraRatio}
-            options={[
-              { label: '1:1', value: '1:1' },
-              { label: '3:2', value: '3:2' },
-              { label: '4:3', value: '4:3' },
-              { label: '16:9', value: '16:9' },
-              { label: t.custom, value: 'Custom' },
-            ]}
-            onChange={(val) => setCameraRatio(val as CameraRatio)}
-            className="mb-0"
-          />
+          <div className="flex items-center gap-3">
+            <Select
+              label={t.ratio}
+              displayLabel={t.ratio}
+              value={cameraRatio}
+              options={[
+                { label: '1:1', value: '1:1' },
+                { label: '3:2', value: '3:2' },
+                { label: '4:3', value: '4:3' },
+                { label: '16:9', value: '16:9' },
+                { label: t.custom, value: 'Custom' },
+              ]}
+              onChange={(val) => setCameraRatio(val as CameraRatio)}
+              className="mb-0 w-140"
+            />
+            <button
+              onClick={onClose}
+              className="sidebar-close-btn"
+              aria-label="Close Sidebar"
+            >
+              &times;
+            </button>
+          </div>
         ) : (
-          <LanguageSelector language={language} setLanguage={setLanguage} />
+          <div className="flex items-center gap-3">
+            <LanguageSelector language={language} setLanguage={setLanguage} />
+            <button
+              onClick={onClose}
+              className="sidebar-close-btn"
+              aria-label="Close Sidebar"
+            >
+              &times;
+            </button>
+          </div>
         )}
       </div>
 

@@ -26,18 +26,19 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLangua
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
+            if (event.key === 'Escape' && isOpen) {
                 setIsOpen(false);
+                event.stopPropagation();
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', handleKeyDown, true);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keydown', handleKeyDown, true);
         };
-    }, []);
+    }, [isOpen]);
 
     const currentLabel = language === 'id' ? 'Bahasa' : 'Language';
 
