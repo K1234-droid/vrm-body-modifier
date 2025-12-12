@@ -242,6 +242,10 @@ body.light-theme {
     margin-top: 2rem;
 }
 
+.mt-9 {
+    margin-top: 2.5rem;
+}
+
 .mb-0 {
     margin-bottom: 0;
 }
@@ -594,13 +598,13 @@ body.light-theme {
     align-items: center;
     justify-content: center;
     z-index: 50;
-    background-color: rgba(0, 0, 0, 0.7);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.3);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 body.light-theme .loading-overlay {
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 .loading-spinner {
@@ -892,6 +896,11 @@ body.light-theme .gizmo-btn[data-tooltip]:hover::before {
     color: var(--text-color);
     font-size: 0.8rem;
     opacity: 0.7;
+}
+
+.loading-overlay p {
+    font-weight: 400 !important;
+    opacity: 0.9 !important;
 }
 
 /* ==================== FORM ELEMENTS ==================== */
@@ -1312,159 +1321,6 @@ input[type=range]::-webkit-slider-runnable-track {
     box-sizing: border-box;
     transition: border-color 0.2s ease, background-color 0.2s ease;
     resize: none;
-}
-
-.camera-input:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    background-color: transparent;
-}
-
-.camera-input::-webkit-outer-spin-button,
-.camera-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-    background: transparent;
-    width: 14px;
-    height: 100%;
-}
-
-.camera-input::-webkit-inner-spin-button {
-    opacity: 0.5;
-    background: transparent !important;
-    position: relative;
-    right: 4px;
-}
-
-/* ==================== SCROLLBAR STYLES ==================== */
-.modal-body::-webkit-scrollbar,
-.custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track,
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.modal-body::-webkit-scrollbar-thumb,
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(128, 128, 128, 0.4);
-    border-radius: 10px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover,
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(128, 128, 128, 0.6);
-}
-
-/* ==================== DARK MODE FORCED STYLES ==================== */
-.force-dark-style {
-    background-color: #1E1E1E !important;
-    color: #E0E0E0 !important;
-    border: none !important;
-}
-
-.force-dark-style:hover {
-    background-color: #2C2C2C !important;
-    color: #E0E0E0 !important;
-}
-
-.force-dark-dropdown .custom-select {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--select-bg);
-    color: var(--text-color);
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    border: 1px solid transparent;
-    max-width: 100%;
-    user-select: none;
-}
-
-.force-dark-dropdown .custom-select:hover {
-    background-color: var(--select-hover-bg);
-}
-
-.force-dark-dropdown .custom-select-options {
-    background-color: #1E1E1E !important;
-    border: none !important;
-}
-
-.force-dark-dropdown .custom-option.selected {
-    background-color: var(--select-hover-bg) !important;
-    color: var(--text-color) !important;
-}
-
-.force-dark-dropdown-pose .custom-select {
-    background-color: #1E1E1E !important;
-    color: #E0E0E0 !important;
-    border: 1px solid rgba(128, 128, 128, 0.5) !important;
-}
-
-.force-dark-dropdown-pose .custom-select-options {
-    background-color: #1E1E1E !important;
-    border: none !important;
-}
-
-.force-dark-dropdown-pose .custom-option.selected {
-    background-color: var(--select-hover-bg) !important;
-    color: var(--text-color) !important;
-}
-
-/* ==================== GAZE/EYE CONTROL STYLES ==================== */
-.eye-menu-container {
-    position: absolute;
-    z-index: 1000;
-    width: 120px;
-}
-
-.custom-gaze-position {
-    top: 77px;
-}
-
-.gaze-controller-close-btn {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: var(--text-color);
-    cursor: pointer;
-    line-height: 1;
-    opacity: 1;
-    padding: 0;
-    margin-left: auto;
-    margin-top: -0.8rem;
-    user-select: none;
-}
-
-.gaze-controller-styled-menu {
-    background-color: var(--modal-bg-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border: none;
-    color: var(--text-color);
-    border-radius: 8px;
-}
-
-.gaze-controller-switch-group {
-    margin-top: -0.6rem;
-    margin-bottom: 0.5rem !important;
-}
-
-.gaze-controller-switch-group.no-bottom-margin {
-    margin-bottom: -0.15rem !important;
-}
-
-.custom-gaze-grid-radius {
-    border-radius: 6px !important;
-}
-
-.gaze-grid-border {
-    border: 1px solid var(--gaze-border-color) !important;
 }
 
 /* ==================== FILE INFO STYLES ==================== */

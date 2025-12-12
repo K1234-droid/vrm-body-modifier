@@ -98,7 +98,12 @@ export const loadVRM = async (file: File): Promise<VRM> => {
                         }
 
                         if (isRestricted) {
-                            reject(new Error('modification_prohibited'));
+                            const error = new Error('modification_prohibited');
+                            (error as any).detail = {
+                                version: vrm.meta.metaVersion,
+                                value: vrm.meta.metaVersion === '1' ? meta.modification : meta.licenseName
+                            };
+                            reject(error);
                             URL.revokeObjectURL(url);
                             return;
                         }

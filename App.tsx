@@ -9,13 +9,14 @@ import { createVRMAnimationClip, VRMAnimationLoaderPlugin, VRMLookAtQuaternionPr
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import LanguageSelector, { Language } from './components/LanguageSelector';
-import { translations } from './utils/translations';
+import { translations, getMetaValueLabel } from './utils/translations';
 
 const App: React.FC = () => {
   const [params, setParams] = useState<BodyParameters>(DEFAULT_PARAMETERS);
   const [vrm, setVrm] = useState<VRM | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<{ version: string, value: string } | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [currentPose, setCurrentPose] = useState<'T-Pose' | 'A-Pose' | 'Stand' | 'Custom'>('T-Pose');
   const [poseClip, setPoseClip] = useState<THREE.AnimationClip | null>(null);
@@ -111,6 +112,7 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setErrorDetail(null);
     setVrm(null);
 
     try {
@@ -118,9 +120,12 @@ const App: React.FC = () => {
       setVrm(loadedVrm);
     } catch (err: any) {
 
-      console.error(err);
+      if (err.message !== 'modification_prohibited') {
+        console.error(err);
+      }
       if (err.message === 'modification_prohibited') {
         setError('errorModificationProhibited');
+        setErrorDetail(err.detail);
       } else {
         setError('errorLoad');
       }
@@ -214,7 +219,7 @@ const App: React.FC = () => {
         {isLoading && (
           <div className="loading-overlay">
             <div className="loading-spinner"></div>
-            <p className="font-semibold animate-pulse text-color-primary">{t.processing}</p>
+            <p className="mt-9 font-semibold animate-pulse text-color-primary">{t.processing}</p>
           </div>
         )}
 
@@ -246,7 +251,23 @@ const App: React.FC = () => {
 
           {error && (
             <div className="mt-8 mx-auto p-3 rounded-lg bg-red-900-30 border border-red-800 text-red-200 text-sm" style={{ maxWidth: '400px' }}>
-              {(t as any)[error] || error}
+              {(() => {
+                if (error === 'errorModificationProhibited' && errorDetail) {
+                  if (errorDetail.version === '1') {
+                    return t.errorModificationProhibited;
+                  }
+                  const label = getMetaValueLabel(errorDetail.value, t);
+                  return (
+                    <>
+                      {t.errorModificationProhibited}
+                      <div className="mt-1">
+                        {t.fileInfo.licenseName}: {label}
+                      </div>
+                    </>
+                  );
+                }
+                return (t as any)[error] || error;
+              })()}
             </div>
           )}
 
@@ -285,7 +306,7 @@ const App: React.FC = () => {
         {isLoading && (
           <div className="loading-overlay" style={{ zIndex: 9999 }}>
             <div className="loading-spinner"></div>
-            <p className="font-semibold animate-pulse text-color-primary">{t.processing}</p>
+            <p className="mt-9 font-semibold animate-pulse text-color-primary">{t.processing}</p>
           </div>
         )}
 

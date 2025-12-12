@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { BodyParameters, CameraRatio } from '../types';
 import { VRM } from '@pixiv/three-vrm';
 import LanguageSelector, { Language } from './LanguageSelector';
-import { translations } from '../utils/translations';
+import { translations, getMetaValueLabel } from '../utils/translations';
 
 interface SidebarProps {
   vrm: VRM | null;
@@ -236,40 +236,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
     }
   }, [isCameraMode, activeTab]);
 
-  const translateMetaValue = (value: string | undefined) => {
-    if (!value) return undefined;
 
-    const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const val = t.fileInfo.values;
-
-    switch (normalized) {
-      case 'onlyauthor': return val.onlyAuthor;
-      case 'explicitlylicensedperson':
-      case 'onlyseparatelylicensedperson': return val.explicitlyLicensedPerson;
-      case 'everyone': return val.everyone;
-      case 'allow': return val.allow;
-      case 'disallow': return val.disallow;
-      case 'personalnonprofit': return val.personalNonProfit;
-      case 'personalprofit': return val.personalProfit;
-      case 'corporation': return val.corporation;
-      case 'redistributionprohibited': return val.redistributionProhibited;
-      case 'cc0': return val.cc0;
-      case 'ccby': return val.ccBy;
-      case 'ccbync': return val.ccByNc;
-      case 'ccbysa': return val.ccBySa;
-      case 'ccbyncsa': return val.ccByNcSa;
-      case 'ccbynd': return val.ccByNd;
-      case 'ccbyncnd': return val.ccByNcNd;
-      case 'other': return val.other;
-      case 'seeotherlicense': return val.seeOtherLicense;
-      case 'required': return val.required;
-      case 'unnecessary': return val.unnecessary;
-      case 'prohibited': return val.prohibited;
-      case 'allowmodification': return val.allowModification;
-      case 'allowmodificationredistribution': return val.allowModificationRedistribution;
-      default: return value;
-    }
-  };
 
   const getMeta = () => {
     if (!vrm || !vrm.meta) return null;
@@ -601,42 +568,42 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               <div>
                 <MetaInfoRow
                   label={t.fileInfo.allowedUser}
-                  value={translateMetaValue(metaData.allowedUser)}
+                  value={getMetaValueLabel(metaData.allowedUser, t)}
                 />
 
                 <MetaInfoRow
                   label={t.fileInfo.attribution}
-                  value={translateMetaValue(metaData.attribution)}
+                  value={getMetaValueLabel(metaData.attribution, t)}
                 />
                 <MetaInfoRow
                   label={t.fileInfo.alterations}
-                  value={translateMetaValue(metaData.alterations)}
+                  value={getMetaValueLabel(metaData.alterations, t)}
                 />
 
                 <MetaInfoRow
                   label={t.fileInfo.commercialUsage}
-                  value={translateMetaValue(metaData.commercial)}
+                  value={getMetaValueLabel(metaData.commercial, t)}
                 />
 
                 <div className="grid grid-cols-2 gap-4">
                   <MetaInfoRow
                     label={t.fileInfo.violentUsage}
-                    value={translateMetaValue(metaData.violent)}
+                    value={getMetaValueLabel(metaData.violent, t)}
                   />
                   <MetaInfoRow
                     label={t.fileInfo.sexualUsage}
-                    value={translateMetaValue(metaData.sexual)}
+                    value={getMetaValueLabel(metaData.sexual, t)}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <MetaInfoRow
                     label={t.fileInfo.politicalReligious}
-                    value={translateMetaValue(metaData.politicalReligious)}
+                    value={getMetaValueLabel(metaData.politicalReligious, t)}
                   />
                   <MetaInfoRow
                     label={t.fileInfo.antisocialHate}
-                    value={translateMetaValue(metaData.antisocialHate)}
+                    value={getMetaValueLabel(metaData.antisocialHate, t)}
                   />
                 </div>
 
@@ -647,7 +614,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
                 <MetaInfoRow
                   label={t.fileInfo.licenseName}
-                  value={translateMetaValue(metaData.licenseName)}
+                  value={getMetaValueLabel(metaData.licenseName, t)}
                 />
 
                 <MetaInfoRow

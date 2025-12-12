@@ -43,15 +43,15 @@ export const translations = {
                 everyone: "Semua Orang",
                 personalNonProfit: "Pribadi Non-Profit",
                 personalProfit: "Pribadi Profit",
-                corporation: "Korporasi",
+                corporation: "Pribadi & Korporasi",
                 redistributionProhibited: "Redistribusi Dilarang",
                 cc0: "CC0 (Publik Domain)",
                 ccBy: "CC BY (Atribusi)",
                 ccByNc: "CC BY-NC (Non-Komersial)",
                 ccBySa: "CC BY-SA (Berbagi Serupa)",
-                ccByNcSa: "CC BY-NC-SA",
+                ccByNcSa: "CC BY-NC-SA (Non-Komersial, Berbagi Serupa)",
                 ccByNd: "CC BY-ND (Tanpa Turunan)",
-                ccByNcNd: "CC BY-NC-ND",
+                ccByNcNd: "CC BY-NC-ND (Non-Komersial, Tanpa Turunan)",
                 other: "Lainnya",
                 seeOtherLicense: "Lihat Lisensi Lainnya",
                 required: "Wajib",
@@ -188,15 +188,15 @@ export const translations = {
                 everyone: "Everyone",
                 personalNonProfit: "Personal Non-Profit",
                 personalProfit: "Personal Profit",
-                corporation: "Corporation",
+                corporation: "Individual & Corporate",
                 redistributionProhibited: "Redistribution Prohibited",
                 cc0: "CC0 (Public Domain)",
                 ccBy: "CC BY (Attribution)",
                 ccByNc: "CC BY-NC (Non-Commercial)",
                 ccBySa: "CC BY-SA (ShareAlike)",
-                ccByNcSa: "CC BY-NC-SA",
+                ccByNcSa: "CC BY-NC-SA (Non-Commercial, ShareAlike)",
                 ccByNd: "CC BY-ND (NoDerivs)",
-                ccByNcNd: "CC BY-NC-ND",
+                ccByNcNd: "CC BY-NC-ND (Non-Commercial, NoDerivs)",
                 other: "Other",
                 seeOtherLicense: "See Other License",
                 required: "Required",
@@ -288,5 +288,40 @@ export const translations = {
             lookAtCamera: "Look at Camera",
             gazeController: "Gaze Controller"
         }
+    }
+};
+
+export const getMetaValueLabel = (value: string | undefined, t: any) => {
+    if (!value) return undefined;
+
+    const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const val = t.fileInfo.values;
+
+    switch (normalized) {
+        case 'onlyauthor': return val.onlyAuthor;
+        case 'explicitlylicensedperson':
+        case 'onlyseparatelylicensedperson': return val.explicitlyLicensedPerson;
+        case 'everyone': return val.everyone;
+        case 'allow': return val.allow;
+        case 'disallow': return val.disallow;
+        case 'personalnonprofit': return val.personalNonProfit;
+        case 'personalprofit': return val.personalProfit;
+        case 'corporation': return val.corporation;
+        case 'redistributionprohibited': return val.redistributionProhibited;
+        case 'cc0': return val.cc0;
+        case 'ccby': return val.ccBy;
+        case 'ccbync': return val.ccByNc;
+        case 'ccbysa': return val.ccBySa;
+        case 'ccbyncsa': return val.ccByNcSa;
+        case 'ccbynd': return val.ccByNd;
+        case 'ccbyncnd': return val.ccByNcNd;
+        case 'other': return val.other;
+        case 'seeotherlicense': return val.seeOtherLicense;
+        case 'required': return val.required;
+        case 'unnecessary': return val.unnecessary;
+        case 'prohibited': return val.prohibited;
+        case 'allowmodification': return val.allowModification;
+        case 'allowmodificationredistribution': return val.allowModificationRedistribution;
+        default: return value;
     }
 };
