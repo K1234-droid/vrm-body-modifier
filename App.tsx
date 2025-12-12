@@ -216,7 +216,7 @@ const App: React.FC = () => {
 
   if (!vrm) {
     return (
-      <div className="loading-screen">
+      <div className="loading-screen h-full">
 
         { }
         {isLoading && (
