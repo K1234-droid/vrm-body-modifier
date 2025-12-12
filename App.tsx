@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import ThreeCanvas from './components/ThreeCanvas';
 import { BodyParameters, DEFAULT_PARAMETERS, BoneTransforms, CameraRatio } from './types';
@@ -31,6 +31,7 @@ const App: React.FC = () => {
   const [isTransparent, setIsTransparent] = useState(false);
   const [saveTrigger, setSaveTrigger] = useState<{ format: 'png' | 'jpg', timestamp: number } | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('app_language');
@@ -104,7 +105,8 @@ const App: React.FC = () => {
   }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const target = event.target;
+    const file = target.files?.[0];
     if (!file) return;
 
     setIsLoading(true);
@@ -121,6 +123,9 @@ const App: React.FC = () => {
         setError('errorModificationProhibited');
       } else {
         setError('errorLoad');
+      }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     } finally {
       setIsLoading(false);
@@ -229,6 +234,7 @@ const App: React.FC = () => {
             </button>
 
             <input
+              ref={fileInputRef}
               type="file"
               accept=".vrm"
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
