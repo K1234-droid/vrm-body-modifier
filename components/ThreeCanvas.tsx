@@ -425,12 +425,15 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     camera.position.set(0, 1.2, 3.5);
     cameraRef.current = camera;
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x222222, 1.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x888888, 1.0);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    directionalLight.position.set(1, 1, 1).normalize();
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    directionalLight.position.set(0.0, 0.0, 1.0).normalize();
     scene.add(directionalLight);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
