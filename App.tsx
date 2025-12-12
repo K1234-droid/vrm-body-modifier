@@ -279,8 +279,11 @@ const App: React.FC = () => {
         { }
         <div className="version-info">
           <div className="version-text-container">
+            <span className="version-text version-label-text">
+              {t.version}:&nbsp;
+            </span>
             <span className="version-text">
-              {t.version}: v{import.meta.env.APP_VERSION}
+              v{import.meta.env.APP_VERSION}
             </span>
           </div>
         </div>

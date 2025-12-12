@@ -563,7 +563,7 @@ body.light-theme {
 
 .version-info {
     position: absolute;
-    bottom: 2rem;
+    bottom: 2.71rem;
     left: 2rem;
     z-index: 20;
 }
@@ -1514,6 +1514,31 @@ body:not(.light-theme) .file-info-link {
     }
 }
 
+@media (max-height: 540px) {
+    .blocker-title {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    .blocker-content {
+        transform: translateY(-2%);
+    }
+}
+
+@media (max-height: 530px) {
+    .blocker-title {
+        margin-bottom: 2.54rem;
+    }
+
+    .blocker-message {
+        display: none;
+    }
+
+    .blocker-content {
+        transform: translateY(-9%);
+    }
+}
+
 @media (max-width: 490px) {
     .sidebar-container {
         max-width: none;
@@ -1533,51 +1558,20 @@ body:not(.light-theme) .file-info-link {
     }
 }
 
-@media (max-height: 470px) {
-    .blocker-title {
-        font-size: 1.8rem;
-        margin-bottom: 1rem;
-    }
-
-    .blocker-content {
-        transform: translateY(-2%);
-    }
-}
-
 @media (max-height: 440px) {
     .pose-dropdown-open .gizmo-container {
         display: none !important;
     }
 }
 
-@media (max-height: 420px) {
-    .blocker-title {
-        margin-bottom: 2.54rem;
-    }
-
-    .blocker-message {
-        display: none;
-    }
-
-    .blocker-content {
-        transform: translateY(-9%);
-    }
-}
-
 @media (max-width: 400px) {
     .blocker-title {
         font-size: 1.8rem;
-        margin-bottom: 1rem;
     }
 
-    .blocker-content {
-        transform: translateY(-2%);
-    }
-}
-
-@media (max-width: 385px) {
     .version-info {
         max-width: 150px;
+        bottom: 2rem;
         white-space: normal;
     }
 
@@ -1588,6 +1582,16 @@ body:not(.light-theme) .file-info-link {
     .version-text {
         white-space: normal;
         display: block;
+    }
+}
+
+@media (max-height: 390px) {
+    .blocker-title {
+        font-size: 1.4rem;
+    }
+
+    .blocker-content {
+        transform: translateY(-15%);
     }
 }
 
@@ -1604,10 +1608,13 @@ body:not(.light-theme) .file-info-link {
     }
 }
 
-@media (max-width: 330px) {
+@media (max-width: 350px) {
+    .version-label-text {
+        display: none !important;
+    }
+
     .version-info {
-        max-width: 50px;
-        white-space: normal;
+        bottom: 2.71rem;
     }
 }
 
