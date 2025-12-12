@@ -32,6 +32,7 @@ interface ThreeCanvasProps {
   saveTrigger: { format: 'png' | 'jpg', timestamp: number } | null;
   onSaveComplete: () => void;
   onToggleSidebar: () => void;
+  onVRMLoaded?: () => void;
 }
 
 type PoseType = 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
@@ -59,7 +60,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   isTransparent,
   saveTrigger,
   onSaveComplete,
-  onToggleSidebar
+  onToggleSidebar,
+  onVRMLoaded
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>(0);
@@ -866,6 +868,9 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
       vrmRef.current = vrm;
       if (!scene.getObjectByProperty('uuid', vrm.scene.uuid)) {
         scene.add(vrm.scene);
+        if (onVRMLoaded) {
+          setTimeout(onVRMLoaded, 100);
+        }
       }
 
       const performUpdate = () => {

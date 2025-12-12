@@ -132,10 +132,13 @@ const App: React.FC = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVRMLoaded = useCallback(() => {
+    setIsLoading(false);
+  }, []);
 
   const handleReupload = () => {
     if (isCameraMode) {
@@ -304,7 +307,17 @@ const App: React.FC = () => {
     <div className="app-layout">
       <div className="main-canvas-area">
         {isLoading && (
-          <div className="loading-overlay" style={{ zIndex: 9999 }}>
+          <div
+            className="loading-overlay"
+            style={{
+              zIndex: 9999,
+              position: isCameraMode ? 'absolute' : 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          >
             <div className="loading-spinner"></div>
             <p className="mt-9 font-semibold animate-pulse text-color-primary">{t.processing}</p>
           </div>
@@ -397,6 +410,7 @@ const App: React.FC = () => {
           saveTrigger={saveTrigger}
           onSaveComplete={handleSaveComplete}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onVRMLoaded={handleVRMLoaded}
         />
 
         { }
