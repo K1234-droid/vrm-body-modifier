@@ -1297,7 +1297,6 @@ input[type=range]::-webkit-slider-runnable-track {
     border-radius: 8px;
     line-height: 1;
     transition: background-color 0.2s ease, opacity 0.2s ease;
-    opacity: 0.8;
 }
 
 .sidebar-toggle-btn:hover {
