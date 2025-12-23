@@ -1290,7 +1290,7 @@ input[type=range]::-webkit-slider-runnable-track {
     left: 1rem;
     background: var(--modal-bg-color);
     border: none;
-    color: var(--text-color);
+    color: white !important;
     font-size: 1.2rem;
     cursor: pointer;
     padding: 13px 19.5px;
