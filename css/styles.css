@@ -1288,7 +1288,7 @@ input[type=range]::-webkit-slider-runnable-track {
     position: fixed;
     bottom: 1rem;
     left: 1rem;
-    background: rgba(30, 30, 30, 0.8);
+    background: var(--modal-bg-color);
     border: none;
     color: white !important;
     font-size: 1.2rem;
@@ -1297,6 +1297,7 @@ input[type=range]::-webkit-slider-runnable-track {
     border-radius: 8px;
     line-height: 1;
     transition: background-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.8;
 }
 
 .sidebar-toggle-btn:hover {
