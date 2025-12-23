@@ -422,6 +422,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                           type="number"
                           className="w-full camera-input"
                           value={customResolution.width}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => setCustomResolution({ ...customResolution, width: parseInt(e.target.value) || 0 })}
                         />
                       </div>
@@ -431,6 +432,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                           type="number"
                           className="w-full camera-input"
                           value={customResolution.height}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => setCustomResolution({ ...customResolution, height: parseInt(e.target.value) || 0 })}
                         />
                       </div>
