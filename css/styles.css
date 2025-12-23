@@ -1288,7 +1288,7 @@ input[type=range]::-webkit-slider-runnable-track {
     position: fixed;
     bottom: 1rem;
     left: 1rem;
-    background: var(--modal-bg-color);
+    background: rgba(30, 30, 30, 0.8);
     border: none;
     color: white !important;
     font-size: 1.2rem;
