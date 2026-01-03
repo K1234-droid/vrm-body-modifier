@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import LanguageSelector, { Language } from './components/LanguageSelector';
 import { translations, getMetaValueLabel } from './utils/translations';
+import PWAUpdateNotification from './components/PWAUpdateNotification';
 
 const App: React.FC = () => {
   const [params, setParams] = useState<BodyParameters>(DEFAULT_PARAMETERS);
@@ -55,6 +56,13 @@ const App: React.FC = () => {
         event.preventDefault();
         (document.activeElement as HTMLElement)?.blur();
         setIsPlaying(prev => !prev);
+      }
+
+      if (event.ctrlKey && event.key === 'a') {
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          event.preventDefault();
+        }
       }
     };
 
@@ -296,6 +304,8 @@ const App: React.FC = () => {
             dropUp={true}
           />
         </div>
+
+        <PWAUpdateNotification language={language} />
 
       </div>
     );

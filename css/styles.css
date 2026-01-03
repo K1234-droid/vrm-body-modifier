@@ -25,6 +25,7 @@
 
 body {
     font-family: "Poppins", Arial, sans-serif;
+    user-select: none;
 }
 
 html,
@@ -401,6 +402,10 @@ body.light-theme {
 
 .select-none {
     user-select: none;
+}
+
+.select-text {
+    user-select: text;
 }
 
 .z-20 {
@@ -1445,6 +1450,7 @@ body:not(.light-theme) .file-info-link {
         display: block;
         margin-left: 2px;
         margin-right: 0.4rem;
+        transform: translateX(1px);
     }
 
     .modal-header {
@@ -1460,6 +1466,10 @@ body:not(.light-theme) .file-info-link {
         overflow: hidden;
         text-overflow: ellipsis;
         display: block !important;
+    }
+
+    .modal-header .custom-select-container {
+        transform: translateX(2px);
     }
 
     .modal-nav-tabs {
@@ -1654,4 +1664,38 @@ textarea,
 .slider {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+}
+
+/* ==================== TOAST NOTIFICATION ==================== */
+.toast-notification {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translate(-50%, -20px);
+    background-color: rgba(224, 224, 224, 0.95);
+    color: #121212;
+    padding: 6px 12px;
+    border-radius: 6px;
+    z-index: 200;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: normal;
+    text-align: center;
+    max-width: calc(100vw - 4rem);
+    box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.2s ease;
+    cursor: pointer;
+}
+
+.toast-notification.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+.toast-notification {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
 }

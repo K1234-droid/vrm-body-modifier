@@ -170,7 +170,7 @@ const MetaInfoRow: React.FC<{ label: string; value?: string }> = ({ label, value
   if (!value) return null;
   return (
     <div className="file-info-item">
-      <span className="file-info-label">{label}</span>
+      <span className="file-info-label select-text">{label}</span>
       <span className="file-info-value select-text">{value}</span>
     </div>
   );
@@ -420,7 +420,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                         <label className="modal-label !mb-0">{t.width}</label>
                         <input
                           type="number"
-                          className="w-full camera-input"
+                          className="w-full camera-input select-text"
                           value={customResolution.width}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => setCustomResolution({ ...customResolution, width: parseInt(e.target.value) || 0 })}
@@ -430,7 +430,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                         <label className="modal-label !mb-0">{t.height}</label>
                         <input
                           type="number"
-                          className="w-full camera-input"
+                          className="w-full camera-input select-text"
                           value={customResolution.height}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => setCustomResolution({ ...customResolution, height: parseInt(e.target.value) || 0 })}
@@ -551,7 +551,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
           <div className="tab-content mt-4">
             { }
             <div className="file-info-section">
-              <h4 className="sub-judul mt-0">{t.fileInfo.metaTitle}</h4>
+              <h4 className="sub-judul mt-0 select-text">{t.fileInfo.metaTitle}</h4>
               <div>
                 <MetaInfoRow label={t.fileInfo.title} value={metaData.title} />
                 <MetaInfoRow label={t.fileInfo.version} value={metaData.version} />
@@ -564,7 +564,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
             { }
             <div className="file-info-section">
               <div className="file-info-section:last-child mb-0"></div>
-              <h4 className="sub-judul" style={{ marginTop: '2rem' }}>
+              <h4 className="sub-judul select-text" style={{ marginTop: '2rem' }}>
                 {t.fileInfo.licenseTitle}
               </h4>
               <div>
@@ -631,12 +631,12 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                   if (metaData.otherLicenseUrl) {
                     return (
                       <div className="file-info-item">
-                        <span className="file-info-label">{t.fileInfo.otherLicense}</span>
+                        <span className="file-info-label select-text">{t.fileInfo.otherLicense}</span>
                         <a
                           href={metaData.otherLicenseUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="file-info-value file-info-link"
+                          className="file-info-value file-info-link select-text"
                         >
                           {metaData.otherLicenseUrl}
                         </a>
@@ -656,12 +656,12 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                 { }
                 {metaData.otherPermissionUrl && (
                   <div className="file-info-item">
-                    <span className="file-info-label">{t.fileInfo.otherPermissionUrl}</span>
+                    <span className="file-info-label select-text">{t.fileInfo.otherPermissionUrl}</span>
                     <a
                       href={metaData.otherPermissionUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="file-info-value file-info-link"
+                      className="file-info-value file-info-link select-text"
                     >
                       {metaData.otherPermissionUrl}
                     </a>

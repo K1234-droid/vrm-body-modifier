@@ -142,7 +142,8 @@ export const translations = {
         eyeControl: {
             lookAtCamera: "Lihat Kamera",
             gazeController: "Pengontrol Tatapan"
-        }
+        },
+        pwaUpdate: "Versi terbaru tersedia, silahkan muat ulang halaman ini"
     },
     en: {
         title: "VRM Body Modifier",
@@ -287,7 +288,8 @@ export const translations = {
         eyeControl: {
             lookAtCamera: "Look at Camera",
             gazeController: "Gaze Controller"
-        }
+        },
+        pwaUpdate: "New version available, please reload this page"
     }
 };
 

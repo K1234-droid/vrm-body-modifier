@@ -4,12 +4,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1E1E1E" />
   <title>VRM Body Modifier</title>
 
+  <style>
+    html,
+    body,
+    #root {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #121212;
+      color: #E0E0E0;
+      font-family: "Poppins", Arial, sans-serif;
+    }
 
+    body.dark-theme {
+      background-color: #121212;
+      color: #E0E0E0;
+    }
+
+    body.light-theme {
+      background-color: #E0E0E0;
+      color: #212121;
+    }
+
+    body {
+      font-display: swap;
+    }
+  </style>
+
+  <link rel="preload" href="/assets/fonts/Poppins-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/assets/fonts/Poppins-Medium.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/assets/fonts/Poppins-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/css/styles.css" as="style">
   <link rel="stylesheet" href="/css/styles.css">
-
   <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 
 <body class="dark-theme">
