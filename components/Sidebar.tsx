@@ -86,9 +86,10 @@ interface SelectProps {
   onChange: (val: string) => void;
   displayLabel?: string;
   className?: string;
+  dropdownClassName?: string;
 }
 
-const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displayLabel, className }) => {
+const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displayLabel, className, dropdownClassName }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -127,7 +128,7 @@ const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displa
           <span>{selectedLabel}</span>
           <span className="select-arrow"></span>
         </div>
-        <div className={`custom-select-options ${isOpen ? 'show' : ''}`}>
+        <div className={`custom-select-options ${isOpen ? 'show' : ''} ${dropdownClassName || ''}`}>
           {options.map((opt) => (
             <div
               key={opt.value}
@@ -289,6 +290,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               ]}
               onChange={(val) => setCameraRatio(val as CameraRatio)}
               className="mb-0 w-140"
+              dropdownClassName="scrollable-dropdown"
             />
             <button onClick={onClose} className="sidebar-close-btn" aria-label="Close Sidebar">&times;</button>
           </div>
