@@ -300,7 +300,7 @@ const App: React.FC = () => {
           <LanguageSelector
             language={language}
             setLanguage={setLanguage}
-            className="force-dark-dropdown"
+            className="force-dark-dropdown arrow-reversed"
             dropUp={true}
           />
         </div>

@@ -63,7 +63,7 @@ export const translations = {
         },
         canvasView: "Tampilan Kanvas",
         darkMode: "Tema Gelap",
-        resetParams: "Reset Parameter",
+        resetParams: "Reset",
         resetTooltip: "Reset ke Default",
         resetCamera: "Reset Kamera",
         toggleHelpers: "Sembunyikan/Tampilkan Titik",
@@ -143,7 +143,14 @@ export const translations = {
             lookAtCamera: "Lihat Kamera",
             gazeController: "Pengontrol Tatapan"
         },
-        pwaUpdate: "Versi terbaru tersedia, silahkan muat ulang halaman ini"
+        pwaUpdate: "Versi terbaru tersedia, klik untuk memuat ulang halaman",
+        attention: "Perhatian",
+        importFailed: "Gagal mengimpor data. File mungkin rusak atau tidak valid.",
+        exportSuccess: "Data berhasil diekspor!",
+        exportFailed: "Gagal mengekspor data.",
+        importSuccess: "Data berhasil diimpor!",
+        importTooltip: "Impor Parameter",
+        exportTooltip: "Ekspor Parameter"
     },
     en: {
         title: "VRM Body Modifier",
@@ -209,7 +216,7 @@ export const translations = {
         },
         canvasView: "Canvas View",
         darkMode: "Dark Theme",
-        resetParams: "Reset Parameters",
+        resetParams: "Reset",
         resetTooltip: "Reset to Default",
         resetCamera: "Reset Camera",
         toggleHelpers: "Hide/Show Dots",
@@ -289,7 +296,14 @@ export const translations = {
             lookAtCamera: "Look at Camera",
             gazeController: "Gaze Controller"
         },
-        pwaUpdate: "New version available, please reload this page"
+        pwaUpdate: "New version available, click to reload the page",
+        attention: "Attention",
+        importFailed: "Failed to import data. The file may be corrupt or invalid.",
+        exportSuccess: "Data exported successfully!",
+        exportFailed: "Failed to export data.",
+        importSuccess: "Data imported successfully!",
+        importTooltip: "Import Parameters",
+        exportTooltip: "Export Parameters"
     }
 };
 

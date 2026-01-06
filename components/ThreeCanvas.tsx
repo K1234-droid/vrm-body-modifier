@@ -760,7 +760,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
         }
 
         const link = document.createElement('a');
-        link.download = `vrm-pose-${Date.now()}.${saveTrigger.format}`;
+        link.download = `vrm-pose_${Date.now()}.${saveTrigger.format}`;
         link.href = renderer.domElement.toDataURL(`image/${saveTrigger.format}`);
         link.click();
 

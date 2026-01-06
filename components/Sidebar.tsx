@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { BodyParameters, CameraRatio } from '../types';
 import { VRM } from '@pixiv/three-vrm';
 import LanguageSelector, { Language } from './LanguageSelector';
@@ -179,6 +180,10 @@ const MetaInfoRow: React.FC<{ label: string; value?: string }> = ({ label, value
 
 const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('expression');
+  const [showInvalidModal, setShowInvalidModal] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const scrollPositions = React.useRef<Record<ActiveTab, number>>({
@@ -187,6 +192,80 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
     display: 0,
     fileInfo: 0
   });
+
+  const showToast = (message: string) => {
+    setToast({ message, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+  };
+
+  const handleExport = () => {
+    let exportData: any = { type: activeTab };
+    const timestamp = new Date().toISOString().split('T')[0];
+    const meta = vrm?.meta as any;
+    const title = meta?.title || meta?.name || 'VRM';
+    const filename = `${title}_${timestamp}_${activeTab}.json`;
+
+    if (activeTab === 'expression') {
+      const expressionParams: any = {};
+      Object.keys(params).forEach(key => {
+        if (key.startsWith('exp') || key === 'customExpressions') {
+          expressionParams[key] = (params as any)[key];
+        }
+      });
+      exportData.params = expressionParams;
+    } else if (activeTab === 'body') {
+      const bodyParams: any = {};
+      Object.keys(params).forEach(key => {
+        if (!key.startsWith('exp') && key !== 'customExpressions') {
+          bodyParams[key] = (params as any)[key];
+        }
+      });
+      exportData.params = bodyParams;
+    } else {
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(t.exportSuccess);
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        if (!json.type || !json.params) throw new Error('Invalid format');
+
+        if (json.type !== activeTab) {
+          setShowInvalidModal(true);
+          // Small delay to allow render before adding 'show' class for animation
+          setTimeout(() => setIsModalVisible(true), 10);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
+
+        Object.keys(json.params).forEach(key => {
+          onChange(key as any, json.params[key]);
+        });
+
+        showToast(t.importSuccess);
+      } catch (err) {
+        setShowInvalidModal(true);
+        setTimeout(() => setIsModalVisible(true), 10);
+      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (scrollContainerRef.current) {
@@ -222,14 +301,28 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen && onClose) {
-        onClose();
+      if (event.key === 'Escape') {
+        if (showInvalidModal) {
+          closeModal();
+          event.stopPropagation();
+          return;
+        }
+        if (isOpen && onClose) {
+          onClose();
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, showInvalidModal]);
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+    setTimeout(() => {
+      setShowInvalidModal(false);
+    }, 200);
+  };
 
   React.useEffect(() => {
     if (isCameraMode && (activeTab === 'body' || activeTab === 'fileInfo')) {
@@ -685,14 +778,65 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               {isTransparent ? t.saveAsPng : t.saveAsJpg}
             </button>
           ) : (
-            <button
-              onClick={() => onReset(activeTab === 'body' ? 'body' : 'expression')}
-              className="modal-save-btn w-full"
-            >
-              {t.resetParams}
-            </button>
+            <div className="flex gap-3 w-full">
+              <input
+                type="file"
+                accept=".json"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleImport}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="modal-save-btn flex items-center justify-center relative"
+                style={{ padding: '12.5px 18px' }}
+                data-tooltip={t.importTooltip}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                </svg>
+              </button>
+              <button
+                onClick={handleExport}
+                className="modal-save-btn flex items-center justify-center relative"
+                style={{ padding: '12.5px 18px' }}
+                data-tooltip={t.exportTooltip}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M12 3v13.5m0 0-4.5-4.5M12 16.5l4.5-4.5" />
+                </svg>
+              </button>
+              <button
+                onClick={() => onReset(activeTab === 'body' ? 'body' : 'expression')}
+                className="modal-save-btn flex-grow"
+              >
+                {t.resetParams}
+              </button>
+            </div>
           )}
         </div>
+      )}
+
+      {ReactDOM.createPortal(
+        <div className={`toast-notification ${toast.visible ? 'show' : ''}`} onClick={() => setToast(prev => ({ ...prev, visible: false }))}>
+          {toast.message}
+        </div>,
+        document.body
+      )}
+
+      {showInvalidModal && ReactDOM.createPortal(
+        <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t.attention}</h3>
+              <button className="close-btn" onClick={closeModal}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ textAlign: 'center' }}>{t.importFailed}</p>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
