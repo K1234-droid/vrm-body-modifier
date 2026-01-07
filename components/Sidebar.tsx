@@ -247,14 +247,41 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
         if (json.type !== activeTab) {
           setShowInvalidModal(true);
-          // Small delay to allow render before adding 'show' class for animation
           setTimeout(() => setIsModalVisible(true), 10);
           if (fileInputRef.current) fileInputRef.current.value = '';
           return;
         }
 
         Object.keys(json.params).forEach(key => {
-          onChange(key as any, json.params[key]);
+          let value = json.params[key];
+
+          if (activeTab === 'expression') {
+            if (key === 'customExpressions' && typeof value === 'object' && value !== null) {
+              const clampedCustom: Record<string, number> = {};
+              Object.keys(value).forEach(k => {
+                let val = (value as any)[k];
+                if (typeof val === 'number') {
+                  if (val < 0.00) val = 0.00;
+                  if (val > 1.00) val = 1.00;
+                  clampedCustom[k] = val;
+                }
+              });
+              onChange(key as any, clampedCustom as any);
+              return;
+            }
+
+            if (typeof value === 'number') {
+              if (value < 0.00) value = 0.00;
+              if (value > 1.00) value = 1.00;
+            }
+          } else if (activeTab === 'body') {
+            if (typeof value === 'number') {
+              if (value < 0.50) value = 0.50;
+              if (value > 2.00) value = 2.00;
+            }
+          }
+
+          onChange(key as any, value);
         });
 
         showToast(t.importSuccess);

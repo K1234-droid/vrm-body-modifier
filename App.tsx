@@ -293,7 +293,35 @@ const App: React.FC = () => {
         setParams((prev) => {
           const newParams = { ...prev };
           Object.keys(json.params).forEach(key => {
-            (newParams as any)[key] = json.params[key];
+            let value = json.params[key];
+
+            if (json.type === 'expression') {
+              if (key === 'customExpressions' && typeof value === 'object' && value !== null) {
+                const clampedCustom: Record<string, number> = {};
+                Object.keys(value).forEach(k => {
+                  let val = (value as any)[k];
+                  if (typeof val === 'number') {
+                    if (val < 0.00) val = 0.00;
+                    if (val > 1.00) val = 1.00;
+                    clampedCustom[k] = val;
+                  }
+                });
+                (newParams as any)[key] = clampedCustom;
+                return;
+              }
+
+              if (typeof value === 'number') {
+                if (value < 0.00) value = 0.00;
+                if (value > 1.00) value = 1.00;
+              }
+            } else if (json.type === 'body') {
+              if (typeof value === 'number') {
+                if (value < 0.50) value = 0.50;
+                if (value > 2.00) value = 2.00;
+              }
+            }
+
+            (newParams as any)[key] = value;
           });
           return newParams;
         });
