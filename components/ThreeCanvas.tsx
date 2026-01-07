@@ -131,6 +131,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   const blinkStateRef = useRef<'idle' | 'closing' | 'opening'>('idle');
   const blinkStartTimeRef = useRef(0);
 
+  const [isSceneReady, setIsSceneReady] = useState(false);
+
   useEffect(() => {
     autoBlinkRef.current = autoBlink;
     if (!autoBlink && vrmRef.current && vrmRef.current.expressionManager) {
@@ -395,7 +397,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
         sceneRef.current.add(newGrid);
       }
     }
-  }, [isDarkMode, backgroundImage, isCameraMode, isTransparent, handleResize]);
+  }, [isDarkMode, backgroundImage, isCameraMode, isTransparent, handleResize, isSceneReady]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -443,6 +445,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
 
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+
+    setIsSceneReady(true);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = false;
