@@ -1537,7 +1537,7 @@ body:not(.light-theme) .file-info-link {
         z-index: 1001;
     }
 
-    .modal-header h3 {
+    .sidebar-container .modal-header h3 {
         margin-right: 0.55rem;
         flex-grow: 1;
         min-width: 0;
@@ -1547,11 +1547,11 @@ body:not(.light-theme) .file-info-link {
         display: block !important;
     }
 
-    .modal-header .custom-select-container {
+    .sidebar-container .modal-header .custom-select-container {
         transform: translateX(2px);
     }
 
-    .custom-select-container:focus-within {
+    .sidebar-container .custom-select-container:focus-within {
         z-index: 1000;
     }
 
@@ -1868,6 +1868,7 @@ textarea,
 }
 
 .modal-overlay .modal-header {
+    padding-top: 1rem;
     align-items: center;
 }
 
