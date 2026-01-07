@@ -453,8 +453,8 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               ) : (
                 <div className="switch-container">
                   <label
-                    className="switch-label cursor-pointer select-none"
-                    onClick={onToggleDarkMode}
+                    className="switch-label select-none"
+                    style={{ cursor: 'default' }}
                     htmlFor="dark-mode-toggle"
                   >
                     {t.darkMode}

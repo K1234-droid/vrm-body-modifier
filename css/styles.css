@@ -396,6 +396,10 @@ body.light-theme {
     cursor: crosshair;
 }
 
+.switch-label {
+    cursor: default !important;
+}
+
 .pointer-events-none {
     pointer-events: none;
 }
@@ -1774,7 +1778,8 @@ textarea,
 .sidebar-toggle-btn,
 .gizmo-btn,
 .switch,
-.slider {
+.slider,
+.switch-label {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
 }
