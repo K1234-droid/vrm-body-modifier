@@ -150,7 +150,11 @@ export const translations = {
         exportFailed: "Gagal mengekspor data.",
         importSuccess: "Data berhasil diimpor!",
         importTooltip: "Impor Parameter",
-        exportTooltip: "Ekspor Parameter"
+        exportTooltip: "Ekspor Parameter",
+        dropVRM: "Jatuhkan file VRM untuk memulai",
+        dropFile: "Jatuhkan file di sini",
+        errorOnlyVRM: "Hanya file VRM yang didukung.",
+        errorInvalidFileType: "Hanya file VRM, VRMA, JSON (parameter), dan gambar yang didukung."
     },
     en: {
         title: "VRM Body Modifier",
@@ -303,7 +307,11 @@ export const translations = {
         exportFailed: "Failed to export data.",
         importSuccess: "Data imported successfully!",
         importTooltip: "Import Parameters",
-        exportTooltip: "Export Parameters"
+        exportTooltip: "Export Parameters",
+        dropVRM: "Drop the VRM file to get started",
+        dropFile: "Drop file here",
+        errorOnlyVRM: "Only VRM files are supported.",
+        errorInvalidFileType: "Only VRM, VRMA, JSON (parameters), and image files are supported."
     }
 };
 

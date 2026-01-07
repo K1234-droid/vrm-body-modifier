@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import Sidebar from './components/Sidebar';
 import ThreeCanvas from './components/ThreeCanvas';
 import { BodyParameters, DEFAULT_PARAMETERS, BoneTransforms, CameraRatio } from './types';
@@ -34,6 +35,42 @@ const App: React.FC = () => {
   const [saveTrigger, setSaveTrigger] = useState<{ format: 'png' | 'jpg', timestamp: number } | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragText, setDragText] = useState('');
+  const [showInvalidModal, setShowInvalidModal] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [invalidModalMessage, setInvalidModalMessage] = useState('');
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+
+  const showToast = (message: string) => {
+    setToast({ message, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+  };
+
+  const closeModal = useCallback(() => {
+    setIsModalVisible(false);
+    setTimeout(() => {
+      setShowInvalidModal(false);
+    }, 200);
+  }, []);
+
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showInvalidModal) {
+        closeModal();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    if (showInvalidModal) {
+      window.addEventListener('keydown', handleEscKey, true);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleEscKey, true);
+    };
+  }, [showInvalidModal, closeModal]);
 
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('app_language');
@@ -113,11 +150,56 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const resetAppState = useCallback(() => {
+    setParams(DEFAULT_PARAMETERS);
+    setCurrentPose('T-Pose');
+    setPoseClip(null);
+    setCustomPoseTransforms(null);
+    setIsAnimation(false);
+    setIsPlaying(false);
+    setAutoBlink(false);
+    setIsCameraMode(false);
+  }, []);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const target = event.target;
     const file = target.files?.[0];
     if (!file) return;
+    await processFile(file);
+  };
 
+  const processFile = async (file: File) => {
+    if (!vrm) {
+      if (!file.name.toLowerCase().endsWith('.vrm')) {
+        setInvalidModalMessage(t.errorOnlyVRM);
+        setShowInvalidModal(true);
+        setTimeout(() => setIsModalVisible(true), 10);
+        return;
+      }
+      await loadVRMFile(file);
+      return;
+    }
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+
+    if (ext === 'vrm') {
+      resetAppState();
+      setIsLoading(true);
+      await loadVRMFile(file);
+    } else if (ext === 'vrma') {
+      await handlePoseFile(file);
+    } else if (ext === 'json') {
+      await handleJsonFile(file);
+    } else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext || '')) {
+      await handleImageFile(file);
+    } else {
+      setInvalidModalMessage(t.errorInvalidFileType);
+      setShowInvalidModal(true);
+      setTimeout(() => setIsModalVisible(true), 10);
+    }
+  };
+
+  const loadVRMFile = async (file: File) => {
     setIsLoading(true);
     setError(null);
     setErrorDetail(null);
@@ -126,8 +208,10 @@ const App: React.FC = () => {
     try {
       const loadedVrm = await loadVRM(file);
       setVrm(loadedVrm);
+      setVrm(loadedVrm);
+      if (vrm) {
+      }
     } catch (err: any) {
-
       if (err.message !== 'modification_prohibited') {
         console.error(err);
       }
@@ -144,35 +228,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleVRMLoaded = useCallback(() => {
-    setIsLoading(false);
-  }, []);
-
-  const handleReupload = () => {
-    if (isCameraMode) {
-      setIsCameraMode(false);
-      return;
-    }
-    setVrm(null);
-    setParams(DEFAULT_PARAMETERS);
-    setCurrentPose('T-Pose');
-    setPoseClip(null);
-    setCustomPoseTransforms(null);
-    setIsAnimation(false);
-    setIsAnimation(false);
-    setIsPlaying(false);
-    setAutoBlink(false);
-  };
-
-  const handleSave = (format: 'png' | 'jpg') => {
-    setIsLoading(true);
-    setSaveTrigger({ format, timestamp: Date.now() });
-  };
-
-  const handlePoseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !vrm) return;
-
+  const handlePoseFile = async (file: File) => {
+    if (!vrm) return;
     try {
       const arrayBuffer = await file.arrayBuffer();
       const gltfLoader = new GLTFLoader();
@@ -188,7 +245,6 @@ const App: React.FC = () => {
 
       gltfLoader.parse(arrayBuffer, '', (gltf) => {
         console.warn = originalWarn;
-
         const vrmAnimations = gltf.userData.vrmAnimations;
         if (vrmAnimations && vrmAnimations.length > 0) {
           if (vrm.lookAt) {
@@ -199,10 +255,10 @@ const App: React.FC = () => {
               vrm.scene.add(proxy);
             }
           }
-
           const clip = createVRMAnimationClip(vrmAnimations[0], vrm);
           if (clip) {
             setPoseClip(clip);
+            setCurrentPose('Custom');
             if (clip.duration > 0) {
               setIsAnimation(true);
               setIsPlaying(true);
@@ -215,16 +271,137 @@ const App: React.FC = () => {
       }, (error: any) => {
         console.warn = originalWarn;
         console.error('Error parsing VRMA:', error);
+        setInvalidModalMessage(t.importFailed);
+        setShowInvalidModal(true);
+        setTimeout(() => setIsModalVisible(true), 10);
       });
-
     } catch (error) {
       console.error('Error loading pose:', error);
+      setInvalidModalMessage(t.importFailed);
+      setShowInvalidModal(true);
+      setTimeout(() => setIsModalVisible(true), 10);
     }
   };
 
+  const handleJsonFile = async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        if (!json.type || !json.params) throw new Error('Invalid format');
+
+        setParams((prev) => {
+          const newParams = { ...prev };
+          Object.keys(json.params).forEach(key => {
+            (newParams as any)[key] = json.params[key];
+          });
+          return newParams;
+        });
+        showToast(t.importSuccess);
+      } catch (err) {
+        setInvalidModalMessage(t.importFailed);
+        setShowInvalidModal(true);
+        setTimeout(() => setIsModalVisible(true), 10);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImageFile = async (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (typeof e.target?.result === 'string') {
+        setBackgroundImage(e.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleVRMLoaded = useCallback(() => {
+    setIsLoading(false);
+  }, []);
+
+  const handleReupload = () => {
+    if (isCameraMode) {
+      setIsCameraMode(false);
+      return;
+    }
+    setVrm(null);
+    resetAppState();
+  };
+
+  const handleSave = (format: 'png' | 'jpg') => {
+    setIsLoading(true);
+    setSaveTrigger({ format, timestamp: Date.now() });
+  };
+
+  const handlePoseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !vrm) return;
+    await handlePoseFile(file);
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (showInvalidModal) return;
+
+    setIsDragging(true);
+
+    if (!vrm) {
+      setDragText(t.dropVRM);
+    } else {
+      setDragText(t.dropFile);
+    }
+  }, [vrm, t, showInvalidModal]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (showInvalidModal) return;
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  }, [vrm, t, showInvalidModal]);
+
   if (!vrm) {
     return (
-      <div className="loading-screen h-full">
+      <div
+        className="loading-screen h-full"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        { }
+        {isDragging && (
+          <div
+            className="modal-content drag-over"
+            data-drop-text={dragText}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 99999,
+              backgroundColor: 'transparent',
+              pointerEvents: 'none',
+              borderRadius: 0
+            }}
+          />
+        )}
 
         { }
         {isLoading && (
@@ -307,6 +484,20 @@ const App: React.FC = () => {
 
         <PWAUpdateNotification language={language} />
 
+        {showInvalidModal && ReactDOM.createPortal(
+          <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{t.attention}</h3>
+                <button className="close-btn" onClick={closeModal}>&times;</button>
+              </div>
+              <div className="modal-body">
+                <p style={{ textAlign: 'center' }}>{invalidModalMessage}</p>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     );
   }
@@ -317,7 +508,30 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="app-layout">
+    <div
+      className="app-layout"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      { }
+      {isDragging && (
+        <div
+          className="modal-content drag-over"
+          data-drop-text={dragText}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 99999,
+            backgroundColor: 'transparent',
+            pointerEvents: 'none',
+            borderRadius: 0
+          }}
+        />
+      )}
       <div className="main-canvas-area">
         {isLoading && (
           <div
@@ -462,6 +676,28 @@ const App: React.FC = () => {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
+
+      {ReactDOM.createPortal(
+        <div className={`toast-notification ${toast.visible ? 'show' : ''}`} onClick={() => setToast(prev => ({ ...prev, visible: false }))}>
+          {toast.message}
+        </div>,
+        document.body
+      )}
+
+      {showInvalidModal && ReactDOM.createPortal(
+        <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t.attention}</h3>
+              <button className="close-btn" onClick={closeModal}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ textAlign: 'center' }}>{invalidModalMessage}</p>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
