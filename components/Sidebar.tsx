@@ -789,7 +789,6 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="modal-save-btn flex items-center justify-center relative"
-                style={{ padding: '12.5px 18px' }}
                 data-tooltip={t.importTooltip}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -799,7 +798,6 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               <button
                 onClick={handleExport}
                 className="modal-save-btn flex items-center justify-center relative"
-                style={{ padding: '12.5px 18px' }}
                 data-tooltip={t.exportTooltip}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">

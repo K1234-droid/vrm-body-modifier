@@ -808,6 +808,25 @@ h3 {
     cursor: not-allowed;
 }
 
+.modal-save-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 45px;
+    padding: 0 18px;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.modal-save-btn svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+.modal-footer-actions .flex.gap-3 {
+    align-items: stretch;
+}
+
 .modal-secondary-btn {
     padding: 10px 18px;
     background-color: transparent;
