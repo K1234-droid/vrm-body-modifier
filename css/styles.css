@@ -681,6 +681,7 @@ h3 {
     justify-content: space-between;
     align-items: baseline;
     padding: 1rem 1.5rem;
+    padding-top: 0.95rem;
     flex-shrink: 0;
 }
 
@@ -734,7 +735,7 @@ h3 {
     border-bottom: 2px solid transparent;
     padding: 1.1rem 0rem;
     padding-top: 0.4rem;
-    padding-bottom: 1.05rem;
+    padding-bottom: 1.1rem;
     margin: 0 0.6rem;
     cursor: pointer;
     font-family: "Poppins", Arial, sans-serif;
@@ -1523,13 +1524,15 @@ body:not(.light-theme) .file-info-link {
 
     .sidebar-close-btn {
         display: block;
+        margin-top: 2.1px;
         margin-left: 2px;
         margin-right: 0.4rem;
         transform: translateX(1px);
     }
 
-    .modal-header {
-        padding: 0.95rem 1.5rem;
+    .sidebar-container .modal-header {
+        padding: 0.9rem 1.5rem;
+        padding-bottom: 1rem;
         align-items: center;
         z-index: 1001;
     }
@@ -1568,6 +1571,10 @@ body:not(.light-theme) .file-info-link {
 
     .modal-nav-tabs {
         margin-top: -0.05rem;
+    }
+
+    .nav-tab-btn {
+        padding-bottom: 1.15rem;
     }
 
     .helper-box {
@@ -1806,7 +1813,7 @@ textarea,
     -webkit-tap-highlight-color: transparent !important;
 }
 
-/* ==================== INVALID JSON MODAL ==================== */
+/* ==================== INVALID FILE MODAL ==================== */
 .modal-overlay.hidden .modal-content {
     .max-width-\[calc\(100\%-200px\)\] {
         max-width: calc(100% - 180px);
@@ -1846,7 +1853,7 @@ textarea,
     padding: 0;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 90%;
+    width: calc(100% - 4rem);
     max-width: 380px;
     max-height: 90vh;
     opacity: 0;
