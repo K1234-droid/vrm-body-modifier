@@ -58,27 +58,69 @@ interface SliderProps {
   className?: string;
 }
 
-const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, step = 0.01, onChange, className }) => (
-  <div className={`flex flex-col gap-2 mb-5 ${className || ''}`}>
-    <div className="flex justify-between items-center">
-      <span className="modal-label !mb-0">{label}</span>
-      <span className="value-badge">
-        {value.toFixed(2)}
-      </span>
+const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, step = 0.01, onChange, className }) => {
+  const [inputValue, setInputValue] = React.useState(value.toFixed(2));
+
+  React.useEffect(() => {
+    setInputValue(value.toFixed(2));
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    val = val.replace(/,/g, '.');
+    if (!/^[0-9.]*$/.test(val)) return;
+
+    setInputValue(val);
+  };
+
+  const handleInputCommit = () => {
+    let numVal = parseFloat(inputValue);
+    if (isNaN(numVal)) {
+      setInputValue(value.toFixed(2));
+      return;
+    }
+
+    if (numVal < min) numVal = min;
+    if (numVal > max) numVal = max;
+
+    onChange(numVal);
+    setInputValue(numVal.toFixed(2));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  return (
+    <div className={`flex flex-col gap-2 mb-5 ${className || ''}`}>
+      <div className="flex justify-between items-center">
+        <span className="modal-label !mb-0">{label}</span>
+        <input
+          type="text"
+          className="value-input"
+          value={inputValue}
+          onChange={handleInputChange}
+          onBlur={handleInputCommit}
+          onKeyDown={handleKeyDown}
+          onFocus={(e) => e.target.select()}
+        />
+      </div>
+      <div className="relative w-full h-6 flex items-center">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          aria-label={label}
+        />
+      </div>
     </div>
-    <div className="relative w-full h-6 flex items-center">
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        aria-label={label}
-      />
-    </div>
-  </div>
-);
+  );
+};
 
 interface SelectProps {
   label: string;
