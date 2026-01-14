@@ -19,7 +19,10 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorDetail, setErrorDetail] = useState<{ version: string, value: string } | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('isDarkMode');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [currentPose, setCurrentPose] = useState<'T-Pose' | 'A-Pose' | 'Stand' | 'Custom'>('T-Pose');
   const [poseClip, setPoseClip] = useState<THREE.AnimationClip | null>(null);
   const [customPoseTransforms, setCustomPoseTransforms] = useState<BoneTransforms | null>(null);
@@ -28,10 +31,20 @@ const App: React.FC = () => {
   const [autoBlink, setAutoBlink] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [isCameraMode, setIsCameraMode] = useState(false);
-  const [cameraRatio, setCameraRatio] = useState<CameraRatio>('16:9');
-  const [resolutionPreset, setResolutionPreset] = useState<'1K' | '2K' | '4K' | '8K'>('1K');
-  const [customResolution, setCustomResolution] = useState({ width: 1080, height: 1920 });
-  const [isTransparent, setIsTransparent] = useState(false);
+  const [cameraRatio, setCameraRatio] = useState<CameraRatio>(() => {
+    return (localStorage.getItem('cameraRatio') as CameraRatio) || '16:9';
+  });
+  const [resolutionPreset, setResolutionPreset] = useState<'1K' | '2K' | '4K' | '8K'>(() => {
+    return (localStorage.getItem('resolutionPreset') as '1K' | '2K' | '4K' | '8K') || '1K';
+  });
+  const [customResolution, setCustomResolution] = useState(() => {
+    const saved = localStorage.getItem('customResolution');
+    return saved ? JSON.parse(saved) : { width: 1080, height: 1920 };
+  });
+  const [isTransparent, setIsTransparent] = useState(() => {
+    const saved = localStorage.getItem('isTransparent');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [saveTrigger, setSaveTrigger] = useState<{ format: 'png' | 'jpg', timestamp: number } | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,6 +95,26 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('app_language', language);
   }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('isTransparent', JSON.stringify(isTransparent));
+  }, [isTransparent]);
+
+  useEffect(() => {
+    localStorage.setItem('cameraRatio', cameraRatio);
+  }, [cameraRatio]);
+
+  useEffect(() => {
+    localStorage.setItem('resolutionPreset', resolutionPreset);
+  }, [resolutionPreset]);
+
+  useEffect(() => {
+    localStorage.setItem('customResolution', JSON.stringify(customResolution));
+  }, [customResolution]);
 
   const handlePoseClipApplied = useCallback(() => {
     setPoseClip(null);
