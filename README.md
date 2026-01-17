@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="Background Aplikasi VRM Body Modifier dengan Background Monokrom Gelap" src="https://github.com/user-attachments/assets/2af0925a-91c8-4680-9cf4-1bda42eedd34" />
+<img width="1920" height="1080" alt="VRM Body Modifier" src="https://github.com/user-attachments/assets/2af0925a-91c8-4680-9cf4-1bda42eedd34" />
 
 # VRM Body Modifier
 This application is a web-based tool designed to load, modify, and animate VRM 3D avatars directly in your browser.
