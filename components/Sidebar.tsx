@@ -8,7 +8,7 @@ import { translations, getMetaValueLabel } from '../utils/translations';
 interface SidebarProps {
   vrm: VRM | null;
   params: BodyParameters;
-  onChange: (key: keyof BodyParameters, value: number | string) => void;
+  onChange: (key: keyof BodyParameters, value: number | string, skipHistory?: boolean) => void;
   onReset: (target: 'expression' | 'body') => void;
   isFileLoaded: boolean;
   isDarkMode: boolean;
@@ -31,6 +31,11 @@ interface SidebarProps {
   onSave: (format: 'png' | 'jpg') => void;
   isOpen?: boolean;
   onClose?: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  pushHistory: () => void;
 }
 
 interface SliderGroupProps {
@@ -60,6 +65,9 @@ interface SliderProps {
 
 const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, step = 0.01, onChange, className }) => {
   const [inputValue, setInputValue] = React.useState(value.toFixed(2));
+  const baseId = React.useId();
+  const textId = `text-${baseId}`;
+  const rangeId = `range-${baseId}`;
 
   React.useEffect(() => {
     setInputValue(value.toFixed(2));
@@ -96,8 +104,10 @@ const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, ste
   return (
     <div className={`flex flex-col gap-2 mb-5 ${className || ''}`}>
       <div className="flex justify-between items-center">
-        <span className="modal-label !mb-0">{label}</span>
+        <label htmlFor={textId} className="modal-label !mb-0">{label}</label>
         <input
+          id={textId}
+          name={textId}
           type="text"
           className="value-input"
           value={inputValue}
@@ -108,14 +118,16 @@ const Slider: React.FC<SliderProps> = ({ label, value, min = 0.5, max = 2.0, ste
         />
       </div>
       <div className="relative w-full h-6 flex items-center">
+        <label htmlFor={rangeId} style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: '0' }}>{label}</label>
         <input
+          id={rangeId}
+          name={rangeId}
           type="range"
           min={min}
           max={max}
           step={step}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          aria-label={label}
         />
       </div>
     </div>
@@ -135,6 +147,8 @@ interface SelectProps {
 const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displayLabel, className, dropdownClassName }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const id = React.useId();
+  const selectId = `select-${id}`;
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -165,18 +179,26 @@ const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displa
       {!displayLabel && <span className="modal-label !mb-0">{label}</span>}
       <div className="custom-select-container w-full">
         <div
+          id={selectId}
           className={`custom-select ${isOpen ? 'open' : ''}`}
           onClick={() => setIsOpen(!isOpen)}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          tabIndex={0}
+          aria-label={label}
         >
           <span>{selectedLabel}</span>
           <span className="select-arrow"></span>
         </div>
-        <div className={`custom-select-options ${isOpen ? 'show' : ''} ${dropdownClassName || ''}`}>
+        <div className={`custom-select-options ${isOpen ? 'show' : ''} ${dropdownClassName || ''}`} role="listbox">
           {options.map((opt) => (
             <div
               key={opt.value}
               className={`custom-option font-medium ${value === opt.value ? 'selected' : ''}`}
               onClick={() => { onChange(opt.value); setIsOpen(false); }}
+              role="option"
+              aria-selected={value === opt.value}
             >
               {opt.label}
             </div>
@@ -220,7 +242,7 @@ const MetaInfoRow: React.FC<{ label: string; value?: string }> = ({ label, value
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose, undo, redo, canUndo, canRedo, pushHistory }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('expression');
   const [showInvalidModal, setShowInvalidModal] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -287,6 +309,8 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         const json = JSON.parse(e.target?.result as string);
         if (!json.type || !json.params) throw new Error('Invalid format');
 
+        pushHistory();
+
         if (json.type !== activeTab) {
           setShowInvalidModal(true);
           setTimeout(() => setIsModalVisible(true), 10);
@@ -308,7 +332,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                   clampedCustom[k] = val;
                 }
               });
-              onChange(key as any, clampedCustom as any);
+              onChange(key as any, clampedCustom as any, true);
               return;
             }
 
@@ -323,7 +347,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
             }
           }
 
-          onChange(key as any, value);
+          onChange(key as any, value, true);
         });
 
         showToast(t.importSuccess);
@@ -435,7 +459,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
   return (
     <div className={`sidebar-container ${isOpen ? 'open' : ''} ${isAnimating ? 'animating' : ''}`}>
       { }
-      <div className="modal-header">
+      <div className={`modal-header ${!isCameraMode ? 'editor-header' : ''}`}>
         <h3>{isCameraMode ? t.cameraMode : t.bodyParams}</h3>
         {isCameraMode ? (
           <div className="flex items-center gap-3">
@@ -457,8 +481,25 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
             <button onClick={onClose} className="sidebar-close-btn" aria-label="Close Sidebar">&times;</button>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <LanguageSelector language={language} setLanguage={setLanguage} />
+          <div className="flex items-center gap-2 header-controls-right">
+            <button
+              className={`modal-header-btn ${!canUndo ? 'disabled' : ''}`}
+              onClick={undo}
+              disabled={!canUndo}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="undoRedo-btn">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+            </button>
+            <button
+              className={`modal-header-btn ${!canRedo ? 'disabled' : ''}`}
+              onClick={redo}
+              disabled={!canRedo}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="undoRedo-btn">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+              </svg>
+            </button>
             <button onClick={onClose} className="sidebar-close-btn" aria-label="Close Sidebar">&times;</button>
           </div>
         )}
@@ -522,8 +563,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               ) : (
                 <div className="switch-container">
                   <label
-                    className="switch-label select-none"
-                    style={{ cursor: 'default' }}
+                    className="switch-label select-none cursor-pointer"
                     htmlFor="dark-mode-toggle"
                   >
                     {t.darkMode}
@@ -532,6 +572,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                     <input
                       type="checkbox"
                       id="dark-mode-toggle"
+                      name="dark-mode-toggle"
                       checked={isDarkMode}
                       onChange={onToggleDarkMode}
                     />
@@ -545,13 +586,15 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                   <div className="switch-container mb-3">
                     <label
                       className="switch-label cursor-pointer select-none"
-                      onClick={() => setIsTransparent(!isTransparent)}
+                      htmlFor="transparent-toggle"
                     >
                       {t.transparent}
                     </label>
                     <label className="switch">
                       <input
                         type="checkbox"
+                        id="transparent-toggle"
+                        name="transparent-toggle"
                         checked={isTransparent}
                         onChange={(e) => setIsTransparent(e.target.checked)}
                       />
@@ -581,8 +624,10 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                   {cameraRatio === 'Custom' && (
                     <div className="flex gap-3 mt-3 mb-8">
                       <div className="flex flex-col gap-3 w-1-2">
-                        <label className="modal-label !mb-0">{t.width}</label>
+                        <label htmlFor="custom-width" className="modal-label !mb-0">{t.width}</label>
                         <input
+                          id="custom-width"
+                          name="custom-width"
                           type="number"
                           className="w-full camera-input select-text"
                           value={customResolution.width}
@@ -591,8 +636,10 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                         />
                       </div>
                       <div className="flex flex-col gap-3 w-1-2">
-                        <label className="modal-label !mb-0">{t.height}</label>
+                        <label htmlFor="custom-height" className="modal-label !mb-0">{t.height}</label>
                         <input
+                          id="custom-height"
+                          name="custom-height"
                           type="number"
                           className="w-full camera-input select-text"
                           value={customResolution.height}
@@ -615,13 +662,15 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               <div className="switch-container mb-7">
                 <label
                   className="switch-label cursor-pointer select-none"
-                  onClick={() => setAutoBlink(!autoBlink)}
+                  htmlFor="auto-blink-toggle"
                 >
                   {t.params.autoBlink}
                 </label>
                 <label className="switch">
                   <input
                     type="checkbox"
+                    id="auto-blink-toggle"
+                    name="auto-blink-toggle"
                     checked={autoBlink}
                     onChange={(e) => setAutoBlink(e.target.checked)}
                   />
@@ -837,75 +886,84 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         )}
       </div>
 
-      {(isCameraMode || (activeTab !== 'display' && activeTab !== 'fileInfo')) && (
-        <div className="modal-footer-actions">
-          {isCameraMode ? (
-            <button
-              onClick={() => onSave(isTransparent ? 'png' : 'jpg')}
-              className="modal-save-btn w-full"
-            >
-              {isTransparent ? t.saveAsPng : t.saveAsJpg}
-            </button>
-          ) : (
-            <div className="flex gap-3 w-full">
-              <input
-                type="file"
-                accept=".json"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleImport}
-              />
+      {
+        (isCameraMode || (activeTab !== 'display' && activeTab !== 'fileInfo')) && (
+          <div className="modal-footer-actions">
+            {isCameraMode ? (
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="modal-save-btn flex items-center justify-center relative"
-                data-tooltip={t.importTooltip}
+                onClick={() => onSave(isTransparent ? 'png' : 'jpg')}
+                className="modal-save-btn w-full"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-                </svg>
+                {isTransparent ? t.saveAsPng : t.saveAsJpg}
               </button>
-              <button
-                onClick={handleExport}
-                className="modal-save-btn flex items-center justify-center relative"
-                data-tooltip={t.exportTooltip}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M12 3v13.5m0 0-4.5-4.5M12 16.5l4.5-4.5" />
-                </svg>
-              </button>
-              <button
-                onClick={() => onReset(activeTab === 'body' ? 'body' : 'expression')}
-                className="modal-save-btn flex-grow"
-              >
-                {t.resetParams}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {ReactDOM.createPortal(
-        <div className={`toast-notification ${toast.visible ? 'show' : ''}`} onClick={() => setToast(prev => ({ ...prev, visible: false }))}>
-          {toast.message}
-        </div>,
-        document.body
-      )}
-
-      {showInvalidModal && ReactDOM.createPortal(
-        <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t.attention}</h3>
-              <button className="close-btn" onClick={closeModal}>&times;</button>
-            </div>
-            <div className="modal-body">
-              <p style={{ textAlign: 'center' }}>{t.importFailed}</p>
-            </div>
+            ) : (
+              <div className="flex gap-3 w-full">
+                <label htmlFor="import-json-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: '0', margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: '0' }}>Import JSON</label>
+                <input
+                  type="file"
+                  id="import-json-input"
+                  name="import-json-input"
+                  accept=".json"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleImport}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="modal-save-btn flex items-center justify-center relative"
+                  data-tooltip={t.importTooltip}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleExport}
+                  className="modal-save-btn flex items-center justify-center relative"
+                  data-tooltip={t.exportTooltip}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M12 3v13.5m0 0-4.5-4.5M12 16.5l4.5-4.5" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => onReset(activeTab === 'body' ? 'body' : 'expression')}
+                  className="modal-save-btn flex-grow"
+                >
+                  {t.resetParams}
+                </button>
+              </div>
+            )}
           </div>
-        </div>,
-        document.body
-      )}
-    </div>
+        )
+      }
+
+      {
+        ReactDOM.createPortal(
+          <div className={`toast-notification ${toast.visible ? 'show' : ''}`} onClick={() => setToast(prev => ({ ...prev, visible: false }))}>
+            {toast.message}
+          </div>,
+          document.body
+        )
+      }
+
+      {
+        showInvalidModal && ReactDOM.createPortal(
+          <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{t.attention}</h3>
+                <button className="close-btn" onClick={closeModal}>&times;</button>
+              </div>
+              <div className="modal-body">
+                <p style={{ textAlign: 'center' }}>{t.importFailed}</p>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      }
+    </div >
   );
 };
 

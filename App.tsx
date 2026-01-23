@@ -12,6 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import LanguageSelector, { Language } from './components/LanguageSelector';
 import { translations, getMetaValueLabel } from './utils/translations';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
+import { HistoryManager } from './utils/history';
 
 const App: React.FC = () => {
   const [params, setParams] = useState<BodyParameters>(DEFAULT_PARAMETERS);
@@ -54,6 +55,16 @@ const App: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [invalidModalMessage, setInvalidModalMessage] = useState('');
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+  const historyRef = useRef(new HistoryManager<BodyParameters>());
+  const isInternalUpdate = useRef(false);
+  const lastInteractionTime = useRef(0);
+  const lastPushedState = useRef<BodyParameters>(DEFAULT_PARAMETERS);
+  const lastParameterGroup = useRef<'expression' | 'body' | null>(null);
+  const realtimeParamsRef = useRef<BodyParameters>(params);
+
+  useEffect(() => {
+    realtimeParamsRef.current = params;
+  }, [params]);
 
   const showToast = (message: string) => {
     setToast({ message, visible: true });
@@ -134,6 +145,15 @@ const App: React.FC = () => {
           event.preventDefault();
         }
       }
+
+      if (event.ctrlKey && (event.key === 'z' || event.key === 'Z')) {
+        event.preventDefault();
+        handleUndo();
+      }
+      if (event.ctrlKey && (event.key === 'y' || event.key === 'Y')) {
+        event.preventDefault();
+        handleRedo();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -151,40 +171,81 @@ const App: React.FC = () => {
       setIsPlaying(false);
     }
   }, []);
+  const pushHistory = useCallback(() => {
+    historyRef.current.push(realtimeParamsRef.current);
+    lastPushedState.current = realtimeParamsRef.current;
+    lastInteractionTime.current = 0;
+    lastParameterGroup.current = null;
+  }, []);
 
   const handleParamChange = useCallback((key: keyof BodyParameters, value: number | string) => {
-    setParams((prev) => ({ ...prev, [key]: value }));
+    const now = Date.now();
+    const group: 'expression' | 'body' = (key.startsWith('exp') || key === 'customExpressions') ? 'expression' : 'body';
+
+    if (now - lastInteractionTime.current > 500 || (lastParameterGroup.current && lastParameterGroup.current !== group)) {
+      pushHistory();
+    }
+    lastInteractionTime.current = now;
+    lastParameterGroup.current = group;
+
+    const nextParams = { ...realtimeParamsRef.current, [key]: value };
+    realtimeParamsRef.current = nextParams;
+    setParams(nextParams);
+  }, [pushHistory]);
+
+  const handleUndo = useCallback(() => {
+    const result = historyRef.current.undo(realtimeParamsRef.current);
+    if (result) {
+      isInternalUpdate.current = true;
+      realtimeParamsRef.current = result.state;
+      setParams(result.state);
+      lastPushedState.current = result.state;
+      lastInteractionTime.current = 0;
+    }
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    const result = historyRef.current.redo(realtimeParamsRef.current);
+    if (result) {
+      isInternalUpdate.current = true;
+      realtimeParamsRef.current = result.state;
+      setParams(result.state);
+      lastPushedState.current = result.state;
+      lastInteractionTime.current = 0;
+    }
   }, []);
 
   const handleReset = useCallback((target: 'expression' | 'body') => {
-    setParams((prev) => {
-      const newParams = { ...prev };
-      const keys = Object.keys(DEFAULT_PARAMETERS) as Array<keyof BodyParameters>;
+    pushHistory();
 
-      keys.forEach((key) => {
-        const isExpressionParam = key.startsWith('exp') || key === 'customExpressions';
+    const nextParams = { ...realtimeParamsRef.current };
+    const keys = Object.keys(DEFAULT_PARAMETERS) as Array<keyof BodyParameters>;
 
-        if (target === 'expression') {
-          if (isExpressionParam) {
-            newParams[key] = DEFAULT_PARAMETERS[key] as any;
-          }
-        } else if (target === 'body') {
-          if (!isExpressionParam) {
-            newParams[key] = DEFAULT_PARAMETERS[key] as any;
-          }
+    keys.forEach((key) => {
+      const isExpressionParam = key.startsWith('exp') || key === 'customExpressions';
+
+      if (target === 'expression') {
+        if (isExpressionParam) {
+          nextParams[key] = DEFAULT_PARAMETERS[key] as any;
         }
-      });
-
-      return newParams;
+      } else if (target === 'body') {
+        if (!isExpressionParam) {
+          nextParams[key] = DEFAULT_PARAMETERS[key] as any;
+        }
+      }
     });
+
+    realtimeParamsRef.current = nextParams;
+    setParams(nextParams);
 
     if (target === 'expression') {
       setAutoBlink(false);
     }
-  }, []);
+  }, [pushHistory]);
 
   const resetAppState = useCallback(() => {
     setParams(DEFAULT_PARAMETERS);
+    realtimeParamsRef.current = DEFAULT_PARAMETERS;
     setCurrentPose('T-Pose');
     setPoseClip(null);
     setCustomPoseTransforms(null);
@@ -192,6 +253,10 @@ const App: React.FC = () => {
     setIsPlaying(false);
     setAutoBlink(false);
     setIsCameraMode(false);
+    historyRef.current.clear();
+    lastPushedState.current = DEFAULT_PARAMETERS;
+    lastInteractionTime.current = 0;
+    lastParameterGroup.current = null;
   }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -323,41 +388,43 @@ const App: React.FC = () => {
         const json = JSON.parse(e.target?.result as string);
         if (!json.type || !json.params) throw new Error('Invalid format');
 
-        setParams((prev) => {
-          const newParams = { ...prev };
-          Object.keys(json.params).forEach(key => {
-            let value = json.params[key];
+        pushHistory();
 
-            if (json.type === 'expression') {
-              if (key === 'customExpressions' && typeof value === 'object' && value !== null) {
-                const clampedCustom: Record<string, number> = {};
-                Object.keys(value).forEach(k => {
-                  let val = (value as any)[k];
-                  if (typeof val === 'number') {
-                    if (val < 0.00) val = 0.00;
-                    if (val > 1.00) val = 1.00;
-                    clampedCustom[k] = val;
-                  }
-                });
-                (newParams as any)[key] = clampedCustom;
-                return;
-              }
+        const nextParams = { ...realtimeParamsRef.current };
+        Object.keys(json.params).forEach(key => {
+          let value = json.params[key];
 
-              if (typeof value === 'number') {
-                if (value < 0.00) value = 0.00;
-                if (value > 1.00) value = 1.00;
-              }
-            } else if (json.type === 'body') {
-              if (typeof value === 'number') {
-                if (value < 0.50) value = 0.50;
-                if (value > 2.00) value = 2.00;
-              }
+          if (json.type === 'expression') {
+            if (key === 'customExpressions' && typeof value === 'object' && value !== null) {
+              const clampedCustom: Record<string, number> = {};
+              Object.keys(value).forEach(k => {
+                let val = (value as any)[k];
+                if (typeof val === 'number') {
+                  if (val < 0.00) val = 0.00;
+                  if (val > 1.00) val = 1.00;
+                  clampedCustom[k] = val;
+                }
+              });
+              (nextParams as any)[key] = clampedCustom;
+              return;
             }
 
-            (newParams as any)[key] = value;
-          });
-          return newParams;
+            if (typeof value === 'number') {
+              if (value < 0.00) value = 0.00;
+              if (value > 1.00) value = 1.00;
+            }
+          } else if (json.type === 'body') {
+            if (typeof value === 'number') {
+              if (value < 0.50) value = 0.50;
+              if (value > 2.00) value = 2.00;
+            }
+          }
+
+          (nextParams as any)[key] = value;
         });
+
+        realtimeParamsRef.current = nextParams;
+        setParams(nextParams);
         showToast(t.importSuccess);
       } catch (err) {
         setInvalidModalMessage(t.importFailed);
@@ -736,6 +803,11 @@ const App: React.FC = () => {
         onSave={handleSave}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        undo={handleUndo}
+        redo={handleRedo}
+        canUndo={historyRef.current.canUndo}
+        canRedo={historyRef.current.canRedo}
+        pushHistory={pushHistory}
       />
 
       {ReactDOM.createPortal(

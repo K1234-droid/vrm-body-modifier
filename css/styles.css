@@ -687,6 +687,11 @@ h3 {
     padding: 1rem 1.5rem;
     padding-top: 0.95rem;
     flex-shrink: 0;
+    transform: translateY(1px);
+}
+
+.modal-header.editor-header {
+    padding-bottom: 1.25rem;
 }
 
 .modal-header h3 {
@@ -738,8 +743,8 @@ h3 {
     border: none;
     border-bottom: 2px solid transparent;
     padding: 1.1rem 0rem;
-    padding-top: 0.4rem;
-    padding-bottom: 1.1rem;
+    padding-top: calc(0.4rem + 1px);
+    padding-bottom: calc(1.1rem - 1px);
     margin: 0 0.6rem;
     cursor: pointer;
     font-family: "Poppins", Arial, sans-serif;
@@ -806,6 +811,47 @@ h3 {
 
 .modal-save-btn:hover {
     opacity: 0.9;
+}
+
+.modal-header-btn {
+    background: var(--select-bg);
+    border: none;
+    color: var(--text-color);
+    padding: 9.5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: "Poppins", "Noto Sans JP", Arial, sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-header-btn:hover {
+    background: var(--select-hover-bg);
+}
+
+.undoRedo-btn {
+    width: 14px;
+    height: 14px;
+    display: block;
+}
+
+.header-controls-right {
+    transform: translateY(1px);
+}
+
+.modal-header-btn.disabled {
+    opacity: 0.55;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+}
+
+.modal-header-btn.disabled:hover {
+    background: var(--select-bg) !important;
 }
 
 .modal-save-btn:disabled {
@@ -1534,11 +1580,24 @@ body:not(.light-theme) .file-info-link {
         transform: translateX(1px);
     }
 
+    .sidebar-container .modal-header.editor-header .sidebar-close-btn {
+        transform: translateX(3px) translateY(1px);
+    }
+
     .sidebar-container .modal-header {
-        padding: 0.9rem 1.5rem;
+        padding: 0.85rem 1.5rem;
         padding-bottom: 1rem;
         align-items: center;
         z-index: 1001;
+    }
+
+    .sidebar-container .modal-header.editor-header {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .modal-header.editor-header+.modal-nav-tabs .nav-tab-btn {
+        padding-bottom: calc(1.2rem - 2px);
     }
 
     .sidebar-container .modal-header h3 {
@@ -1549,6 +1608,10 @@ body:not(.light-theme) .file-info-link {
         overflow: hidden;
         text-overflow: ellipsis;
         display: block !important;
+    }
+
+    .sidebar-container .modal-header.editor-header h3 {
+        transform: translateY(-1px);
     }
 
     .sidebar-container .modal-header .custom-select-container {
@@ -1578,11 +1641,18 @@ body:not(.light-theme) .file-info-link {
     }
 
     .nav-tab-btn {
-        padding-bottom: 1.15rem;
+        padding-top: calc(0.4rem + 2px);
+        padding-bottom: calc(1.1rem - 1px);
+        transform: translateY(-1px);
+        margin-bottom: -1px;
     }
 
     .helper-box {
         display: none;
+    }
+
+    .header-controls-right {
+        transform: translateX(-2px) translateY(-2px);
     }
 }
 
@@ -1877,6 +1947,7 @@ textarea,
     display: flex;
     align-items: center;
     gap: 10px;
+    transform: translateY(-0.1px);
 }
 
 .modal-overlay .modal-header h3 {

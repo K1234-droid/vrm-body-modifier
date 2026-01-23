@@ -430,3 +430,38 @@ export const updateRootPosition = (vrm: VRM, params: BodyParameters, hipsNode?: 
 
     vrm.scene.position.copy(up.multiplyScalar(legGrowth + footGrowth));
 };
+
+export const disposeVRM = (vrm: VRM) => {
+    vrm.scene.traverse((object: any) => {
+        if (object.isMesh) {
+            const mesh = object as THREE.Mesh;
+            mesh.geometry.dispose();
+
+            if (mesh.material) {
+                if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach((mat) => {
+                        disposeMaterial(mat);
+                    });
+                } else {
+                    disposeMaterial(mesh.material);
+                }
+            }
+        }
+    });
+
+    const proxy = vrm.scene.children.find(child => (child as any).type === 'VRMLookAtQuaternionProxy');
+    if (proxy) {
+        vrm.scene.remove(proxy);
+    }
+};
+
+const disposeMaterial = (material: THREE.Material) => {
+    material.dispose();
+
+    for (const key in material) {
+        const value = (material as any)[key];
+        if (value && value.isTexture) {
+            value.dispose();
+        }
+    }
+};

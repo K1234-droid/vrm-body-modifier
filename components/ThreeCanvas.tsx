@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { VRM, VRMHumanBoneName, VRMExpressionPresetName } from '@pixiv/three-vrm';
-import { applyBodyParameters, updateRootPosition } from '../services/vrmService';
+import { applyBodyParameters, updateRootPosition, disposeVRM } from '../services/vrmService';
 import { BodyParameters, BoneTransforms, CameraRatio } from '../types';
 import { translations } from '../utils/translations';
 import { Language } from './LanguageSelector';
@@ -868,7 +868,15 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     if (!scene) return;
 
     if (vrmRef.current && vrmRef.current !== vrm) {
-      scene.remove(vrmRef.current.scene);
+      const oldVrm = vrmRef.current;
+      scene.remove(oldVrm.scene);
+      disposeVRM(oldVrm);
+
+      if (mixerRef.current) {
+        mixerRef.current.stopAllAction();
+        mixerRef.current.uncacheRoot(mixerRef.current.getRoot());
+        mixerRef.current = null;
+      }
     }
 
     if (vrm) {
