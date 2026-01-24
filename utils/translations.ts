@@ -154,7 +154,8 @@ export const translations = {
         dropVRM: "Jatuhkan file VRM untuk memulai",
         dropFile: "Jatuhkan file di sini",
         errorOnlyVRM: "Hanya file VRM yang didukung.",
-        errorInvalidFileType: "Hanya file VRM, VRMA, JSON (parameter), dan gambar yang didukung."
+        errorInvalidFileType: "Hanya file VRM, VRMA, JSON (parameter), dan gambar yang didukung.",
+        errorWebGL: "Perangkat atau browser Anda tidak mendukung WebGL. Pastikan driver GPU diperbarui atau gunakan browser lain."
     },
     en: {
         title: "VRM Body Modifier",
@@ -311,7 +312,8 @@ export const translations = {
         dropVRM: "Drop the VRM file to get started",
         dropFile: "Drop file here",
         errorOnlyVRM: "Only VRM files are supported.",
-        errorInvalidFileType: "Only VRM, VRMA, JSON (parameters), and image files are supported."
+        errorInvalidFileType: "Only VRM, VRMA, JSON (parameters), and image files are supported.",
+        errorWebGL: "Your device or browser does not support WebGL. Please ensure your GPU drivers are up to date or use another browser."
     }
 };
 

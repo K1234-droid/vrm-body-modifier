@@ -62,10 +62,6 @@ const App: React.FC = () => {
   const lastParameterGroup = useRef<'expression' | 'body' | null>(null);
   const realtimeParamsRef = useRef<BodyParameters>(params);
 
-  useEffect(() => {
-    realtimeParamsRef.current = params;
-  }, [params]);
-
   const showToast = (message: string) => {
     setToast({ message, visible: true });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
@@ -106,6 +102,8 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('app_language', language);
   }, [language]);
+
+  const t = translations[language];
 
   useEffect(() => {
     localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
@@ -160,7 +158,26 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentPose, isAnimation]);
 
-  const t = translations[language];
+  const isWebGL2Available = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+    } catch (e) {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!isWebGL2Available()) {
+      setInvalidModalMessage(t.errorWebGL);
+      setShowInvalidModal(true);
+      setTimeout(() => setIsModalVisible(true), 10);
+    }
+  }, [t.errorWebGL]);
+
+  useEffect(() => {
+    realtimeParamsRef.current = params;
+  }, [params]);
 
   const handleSetCurrentPose = useCallback((pose: 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom') => {
     setCurrentPose(pose);
@@ -766,6 +783,11 @@ const App: React.FC = () => {
           onSaveComplete={handleSaveComplete}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           onVRMLoaded={handleVRMLoaded}
+          onWebGLError={() => {
+            setInvalidModalMessage(t.errorWebGL);
+            setShowInvalidModal(true);
+            setTimeout(() => setIsModalVisible(true), 10);
+          }}
         />
 
         { }

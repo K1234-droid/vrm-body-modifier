@@ -33,6 +33,7 @@ interface ThreeCanvasProps {
   onSaveComplete: () => void;
   onToggleSidebar: () => void;
   onVRMLoaded?: () => void;
+  onWebGLError?: (message: string) => void;
 }
 
 type PoseType = 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
@@ -61,7 +62,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   saveTrigger,
   onSaveComplete,
   onToggleSidebar,
-  onVRMLoaded
+  onVRMLoaded,
+  onWebGLError
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number>(0);
@@ -438,7 +440,16 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
     directionalLight.position.set(0.0, 0.0, 1.0).normalize();
     scene.add(directionalLight);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    } catch (e: any) {
+      console.error('Failed to create WebGLRenderer:', e);
+      if (onWebGLError) {
+        onWebGLError(e.message || 'WebGL creation failed');
+      }
+      return;
+    }
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
