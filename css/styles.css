@@ -688,6 +688,8 @@ h3 {
     padding-top: 0.95rem;
     flex-shrink: 0;
     transform: translateY(1px);
+    position: relative;
+    z-index: 10;
 }
 
 .modal-header.editor-header {
