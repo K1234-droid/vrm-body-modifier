@@ -192,7 +192,7 @@ export const translations = {
         aboutContent: "This page aims to modify 3D Avatars with the VRM extension. Thank you for using it.",
         aboutReadme: "For more information, please visit the readme page.",
         btnViewReadme: "View readme",
-        subtitleNote: "Note",
+        subtitleNote: "Notes",
         noteContent: "Ensure you comply with the terms and guidelines of each VRM owner.",
         btnViewDisclaimer: "View Compliance and Disclaimer",
         subtitleCredits: "Credits",
