@@ -400,7 +400,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
           event.stopPropagation();
           return;
         }
-        if (isOpen && onClose) {
+        if (isOpen && onClose && window.innerWidth <= 865) {
           onClose();
         }
       }

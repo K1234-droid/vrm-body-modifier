@@ -29,14 +29,15 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLangua
             if (event.key === 'Escape' && isOpen) {
                 setIsOpen(false);
                 event.stopPropagation();
+                event.stopImmediatePropagation();
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('keydown', handleKeyDown, true);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown, true);
+            window.removeEventListener('keydown', handleKeyDown, true);
         };
     }, [isOpen]);
 

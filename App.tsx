@@ -125,11 +125,11 @@ const App: React.FC = () => {
     };
 
     if (showInvalidModal || showSettingsModal || showAboutModal) {
-      window.addEventListener('keydown', handleEscKey, true);
+      window.addEventListener('keydown', handleEscKey);
     }
 
     return () => {
-      window.removeEventListener('keydown', handleEscKey, true);
+      window.removeEventListener('keydown', handleEscKey);
     };
   }, [showInvalidModal, showSettingsModal, showAboutModal, closeModal, closeSettingsModal, closeAboutModal]);
 

@@ -244,8 +244,23 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsPoseDropdownOpen(false);
-        setEyeMenu(null);
+        let suppressed = false;
+
+        if (isPoseDropdownOpen) {
+          setIsPoseDropdownOpen(false);
+          suppressed = true;
+        }
+
+        if (eyeMenu) {
+          setEyeMenu(null);
+          suppressed = true;
+        }
+
+        if (suppressed) {
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        }
+
         if (transformControlsRef.current) {
           transformControlsRef.current.detach();
           selectedBoneRef.current = null;
@@ -256,9 +271,9 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
         }
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [isPoseDropdownOpen, eyeMenu]);
 
   const handleResize = useCallback(() => {
     if (!mountRef.current || !cameraRef.current || !rendererRef.current || !sceneRef.current) return;
