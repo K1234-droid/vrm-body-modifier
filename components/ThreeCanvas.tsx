@@ -1333,11 +1333,11 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
           }}
         >
           <div className="custom-select-options show" style={{ position: 'static', border: '1px solid #444' }}>
-            <div className="custom-option" onClick={() => handleEyeControl('lookAtCamera')}>
+            <div className="custom-option" onClick={() => { handleEyeControl('lookAtCamera'); (document.activeElement as HTMLElement)?.blur(); }}>
               <input type="checkbox" checked={lookAtCamera} readOnly className="mr-2" />
               {t.eyeControl.lookAtCamera}
             </div>
-            <div className="custom-option" onClick={() => handleEyeControl('gazeController')}>
+            <div className="custom-option" onClick={() => { handleEyeControl('gazeController'); (document.activeElement as HTMLElement)?.blur(); }}>
               {t.eyeControl.gazeController}
             </div>
           </div>
@@ -1415,7 +1415,7 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
               <div className={`custom-select-options ${isPoseDropdownOpen ? 'show' : ''}`}>
                 {POSES.map((pose) => (
                   <div key={pose.value} className={`custom-option ${currentPose === pose.value ? 'selected' : ''}`}
-                    onMouseDown={(e) => { e.preventDefault(); setCurrentPose(pose.value); setIsPoseDropdownOpen(false); }}>
+                    onMouseDown={(e) => { e.preventDefault(); setCurrentPose(pose.value); setIsPoseDropdownOpen(false); (document.activeElement as HTMLElement)?.blur(); }}>
                     {pose.label}
                   </div>
                 ))}

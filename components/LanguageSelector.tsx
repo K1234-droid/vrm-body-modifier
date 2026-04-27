@@ -40,7 +40,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLangua
         };
     }, [isOpen]);
 
-    const currentLabel = language === 'id' ? 'Bahasa' : 'Language';
+    const currentLabel = language === 'id' ? 'Indonesia' : 'English';
 
     return (
         <div
@@ -64,6 +64,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ language, setLangua
                             e.preventDefault();
                             setLanguage(lang.value);
                             setIsOpen(false);
+                            (document.activeElement as HTMLElement)?.blur();
                         }}
                     >
                         {lang.label}

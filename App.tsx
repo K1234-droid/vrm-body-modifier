@@ -55,6 +55,11 @@ const App: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [invalidModalMessage, setInvalidModalMessage] = useState('');
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [isAboutModalVisible, setIsAboutModalVisible] = useState(false);
   const historyRef = useRef(new HistoryManager<BodyParameters>());
   const isInternalUpdate = useRef(false);
   const lastInteractionTime = useRef(0);
@@ -74,23 +79,84 @@ const App: React.FC = () => {
     }, 200);
   }, []);
 
+  const closeSettingsModal = useCallback(() => {
+    setIsSettingsModalVisible(false);
+    setTimeout(() => {
+      setShowSettingsModal(false);
+    }, 200);
+  }, []);
+
+  const openSettingsModal = useCallback(() => {
+    setShowSettingsModal(true);
+    setTimeout(() => setIsSettingsModalVisible(true), 10);
+    setIsMoreMenuOpen(false);
+  }, []);
+
+  const closeAboutModal = useCallback(() => {
+    setIsAboutModalVisible(false);
+    setTimeout(() => {
+      setShowAboutModal(false);
+    }, 200);
+  }, []);
+
+  const openAboutModal = useCallback(() => {
+    setShowAboutModal(true);
+    setTimeout(() => setIsAboutModalVisible(true), 10);
+    setIsMoreMenuOpen(false);
+  }, []);
+
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showInvalidModal) {
-        closeModal();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
+      if (event.key === 'Escape') {
+        if (showInvalidModal) {
+          closeModal();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        } else if (showSettingsModal) {
+          closeSettingsModal();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        } else if (showAboutModal) {
+          closeAboutModal();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+        }
       }
     };
 
-    if (showInvalidModal) {
+    if (showInvalidModal || showSettingsModal || showAboutModal) {
       window.addEventListener('keydown', handleEscKey, true);
     }
 
     return () => {
       window.removeEventListener('keydown', handleEscKey, true);
     };
-  }, [showInvalidModal, closeModal]);
+  }, [showInvalidModal, showSettingsModal, showAboutModal, closeModal, closeSettingsModal, closeAboutModal]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const container = document.getElementById('more-menu-container');
+      if (container && !container.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMoreMenuOpen(false);
+      }
+    };
+
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEsc);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isMoreMenuOpen]);
 
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('app_language');
@@ -315,6 +381,9 @@ const App: React.FC = () => {
   };
 
   const loadVRMFile = async (file: File) => {
+    closeSettingsModal();
+    closeAboutModal();
+    setIsMoreMenuOpen(false);
     setIsLoading(true);
     setError(null);
     setErrorDetail(null);
@@ -491,6 +560,7 @@ const App: React.FC = () => {
     e.stopPropagation();
 
     if (showInvalidModal) return;
+    if (showSettingsModal && window.innerWidth <= 490) return;
 
     setIsDragging(true);
 
@@ -499,7 +569,7 @@ const App: React.FC = () => {
     } else {
       setDragText(t.dropFile);
     }
-  }, [vrm, t, showInvalidModal]);
+  }, [vrm, t, showInvalidModal, showSettingsModal]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -514,12 +584,13 @@ const App: React.FC = () => {
     setIsDragging(false);
 
     if (showInvalidModal) return;
+    if (showSettingsModal && window.innerWidth <= 490) return;
 
     const file = e.dataTransfer.files?.[0];
     if (file) {
       await processFile(file);
     }
-  }, [vrm, t, showInvalidModal]);
+  }, [vrm, t, showInvalidModal, showSettingsModal]);
 
   if (!vrm) {
     return (
@@ -532,19 +603,8 @@ const App: React.FC = () => {
         { }
         {isDragging && (
           <div
-            className="modal-content drag-over"
+            className="drag-over-overlay"
             data-drop-text={dragText}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              zIndex: 99999,
-              backgroundColor: 'transparent',
-              pointerEvents: 'none',
-              borderRadius: 0
-            }}
           />
         )}
 
@@ -607,30 +667,29 @@ const App: React.FC = () => {
         </div>
 
         { }
-        <div className="version-info">
-          <div className="version-text-container">
-            <span className="version-text version-label-text">
-              {t.version}:&nbsp;
-            </span>
-            <span className="version-text">
-              v{import.meta.env.APP_VERSION}
-            </span>
-          </div>
-        </div>
 
         <div className="absolute bottom-9 right-8 z-20">
-          <LanguageSelector
+          {/* <LanguageSelector
             language={language}
             setLanguage={setLanguage}
             className="force-dark-dropdown arrow-reversed"
             dropUp={true}
-          />
+          /> */}
+          <div id="more-menu-container" className={`more-menu-container ${isMoreMenuOpen ? 'show-menu' : ''}`} data-tooltip={t.moreMenu}>
+            <button id="more-menu-btn" className="hamburger-icon-btn" onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}>
+              ☰
+            </button>
+            <div className="menu-popup">
+              <button className="menu-btn" onClick={openSettingsModal}>{t.settings}</button>
+              <button className="menu-btn" onClick={openAboutModal}>{t.about}</button>
+            </div>
+          </div>
         </div>
 
         <PWAUpdateNotification language={language} />
 
         {showInvalidModal && ReactDOM.createPortal(
-          <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
+          <div className={`modal-overlay ${isModalVisible ? 'show' : ''} ${isDragging ? 'pointer-events-none' : ''}`}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>{t.attention}</h3>
@@ -638,6 +697,75 @@ const App: React.FC = () => {
               </div>
               <div className="modal-body">
                 <p style={{ textAlign: 'center' }}>{invalidModalMessage}</p>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {showSettingsModal && ReactDOM.createPortal(
+          <div id="other-settings-modal-overlay" className={`modal-overlay modal-slide-right ${isSettingsModalVisible ? 'show' : 'hidden'} ${isDragging ? 'pointer-events-none' : ''}`}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{t.settings}</h3>
+                <button className="close-btn" onClick={closeSettingsModal}>&times;</button>
+              </div>
+              <div className="modal-body">
+                <h4 className="sub-judul">{t.languageSettings}</h4>
+                <div className="switch-container">
+                  <span className="switch-label">{t.allDisplayContent}</span>
+                  <LanguageSelector
+                    language={language}
+                    setLanguage={setLanguage}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {showAboutModal && ReactDOM.createPortal(
+          <div id="about-modal-overlay" className={`modal-overlay modal-slide-right ${isAboutModalVisible ? 'show' : 'hidden'} ${isDragging ? 'pointer-events-none' : ''}`}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{t.about}</h3>
+                <button className="close-btn" onClick={closeAboutModal}>&times;</button>
+              </div>
+              <div className="modal-body custom-scrollbar about-body">
+                <p>{t.aboutContent}</p>
+                <p>{t.aboutReadme}</p>
+                <div className="readme-button-container">
+                  <a href="https://github.com/K1234-droid/vrm-body-modifier/blob/main/README.md" target="_blank" rel="noopener noreferrer" className="blocker-btn inline-block" style={{ textDecoration: 'none', marginBottom: 0 }}>
+                    {t.btnViewReadme}
+                  </a>
+                </div>
+
+                <h4 className="sub-judul">{t.subtitleNote}</h4>
+                <p>{t.noteContent}</p>
+                <div className="guidelines-button-container">
+                  <a href="https://github.com/K1234-droid/vrm-body-modifier/blob/main/README.md#compliance--disclaimer" target="_blank" rel="noopener noreferrer" className="blocker-btn inline-block" style={{ textDecoration: 'none', marginBottom: 0 }}>
+                    {t.btnViewDisclaimer}
+                  </a>
+                </div>
+
+                <h4 className="sub-judul">{t.subtitleCredits}</h4>
+                <p className="font-bold">{t.creditsFont}</p>
+                <ul>
+                  <li>{t.creditsFontDetails}</li>
+                </ul>
+
+                <p className="font-bold">{t.creditsThirdParty}</p>
+                <ul>
+                  <li>{t.creditsThreeJs}</li>
+                  <li>{t.creditsPixiv}</li>
+                  <li>{t.creditsReact}</li>
+                  <li>{t.creditsVite}</li>
+                  <li>{t.creditsHeroicons}</li>
+                </ul>
+
+                <h4 className="sub-judul">{t.subtitleVersion}</h4>
+                <p className="text-sm">v{import.meta.env.APP_VERSION}</p>
               </div>
             </div>
           </div>,
@@ -662,19 +790,8 @@ const App: React.FC = () => {
       { }
       {isDragging && (
         <div
-          className="modal-content drag-over"
+          className="drag-over-overlay"
           data-drop-text={dragText}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 99999,
-            backgroundColor: 'transparent',
-            pointerEvents: 'none',
-            borderRadius: 0
-          }}
         />
       )}
       <div className="main-canvas-area">
@@ -840,7 +957,7 @@ const App: React.FC = () => {
       )}
 
       {showInvalidModal && ReactDOM.createPortal(
-        <div className={`modal-overlay ${isModalVisible ? 'show' : ''}`}>
+        <div className={`modal-overlay ${isModalVisible ? 'show' : ''} ${isDragging ? 'pointer-events-none' : ''}`}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{t.attention}</h3>

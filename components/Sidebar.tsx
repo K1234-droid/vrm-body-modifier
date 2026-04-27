@@ -196,7 +196,7 @@ const Select: React.FC<SelectProps> = ({ label, value, options, onChange, displa
             <div
               key={opt.value}
               className={`custom-option font-medium ${value === opt.value ? 'selected' : ''}`}
-              onClick={() => { onChange(opt.value); setIsOpen(false); }}
+              onClick={() => { onChange(opt.value); setIsOpen(false); (document.activeElement as HTMLElement)?.blur(); }}
               role="option"
               aria-selected={value === opt.value}
             >
