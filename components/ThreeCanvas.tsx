@@ -858,8 +858,8 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
           node.position.x = 0;
           const rawNode = model.humanoid?.getRawBoneNode(bone);
           if (rawNode) {
-            node.position.y = rawNode.position.y;
-            node.position.z = rawNode.position.z;
+            node.position.y = rawNode.userData.initialY !== undefined ? rawNode.userData.initialY : rawNode.position.y;
+            node.position.z = rawNode.userData.initialZ !== undefined ? rawNode.userData.initialZ : rawNode.position.z;
           }
         }
       }
