@@ -239,8 +239,8 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
         }
     };
 
-    setDesired(VRMHumanBoneName.Hips, params.waistWidth, 1.0, params.hipSize);
-    setDesired(VRMHumanBoneName.Spine, params.stomachSize, params.torsoHeight, params.stomachSize);
+    setDesired(VRMHumanBoneName.Hips, 1.0, 1.0, params.hipSize);
+    setDesired(VRMHumanBoneName.Spine, params.waistWidth, params.torsoHeight, params.stomachSize);
 
     const chestWidth = params.shoulderWidth;
 
