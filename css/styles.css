@@ -1390,6 +1390,12 @@ input[type=range]::-webkit-slider-runnable-track {
     border-radius: 8px;
 }
 
+.gaze-controller-launch-btn {
+    --gaze-controller-launch-margin-bottom: 1.55rem;
+    margin-top: 0.5rem;
+    margin-bottom: var(--gaze-controller-launch-margin-bottom);
+}
+
 .gaze-controller-switch-group {
     margin-top: -0.6rem;
     margin-bottom: 0.5rem !important;

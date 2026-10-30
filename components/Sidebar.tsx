@@ -15,8 +15,13 @@ interface SidebarProps {
   onToggleDarkMode: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  currentPose: 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
   autoBlink: boolean;
   setAutoBlink: (val: boolean) => void;
+  lookAtCamera: boolean;
+  setLookAtCamera: (val: boolean) => void;
+  showGazeController: boolean;
+  setShowGazeController: (val: boolean) => void;
   backgroundImage: string | null;
   setBackgroundImage: (image: string | null) => void;
   isCameraMode: boolean;
@@ -242,7 +247,7 @@ const MetaInfoRow: React.FC<{ label: string; value?: string }> = ({ label, value
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, autoBlink, setAutoBlink, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose, undo, redo, canUndo, canRedo, pushHistory }) => {
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, currentPose, autoBlink, setAutoBlink, lookAtCamera, setLookAtCamera, showGazeController, setShowGazeController, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose, undo, redo, canUndo, canRedo, pushHistory }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('expression');
   const [showInvalidModal, setShowInvalidModal] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -659,7 +664,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         {activeTab === 'expression' && (
           <div className="tab-content">
             <SliderGroup title={t.groups.eyes} className={isCameraMode ? "!mb-0 mt-4" : "mb-6 mt-4"}>
-              <div className="switch-container mb-7">
+              <div className={`switch-container ${isCameraMode ? 'mb-7' : currentPose === 'Custom' ? 'mb-0' : 'mb-7'}`}>
                 <label
                   className="switch-label cursor-pointer select-none"
                   htmlFor="auto-blink-toggle"
@@ -677,6 +682,46 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
                   <span className="slider"></span>
                 </label>
               </div>
+              {currentPose === 'Custom' && !isCameraMode && (
+                <>
+                  <div className={`switch-container ${lookAtCamera ? 'mb-7' : 'mb-1'}`}>
+                    <label
+                      className="switch-label cursor-pointer select-none"
+                      htmlFor="look-at-camera-toggle"
+                    >
+                      {t.eyeControl.lookAtCamera}
+                    </label>
+                    <label className="switch">
+                      <input
+                        type="checkbox"
+                        id="look-at-camera-toggle"
+                        name="look-at-camera-toggle"
+                        checked={lookAtCamera}
+                        onChange={(e) => setLookAtCamera(e.target.checked)}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                  {!lookAtCamera && (
+                    <button
+                      type="button"
+                      className="modal-save-btn w-full gaze-controller-launch-btn"
+                      onClick={() => setShowGazeController(true)}
+                      disabled={showGazeController}
+                      style={showGazeController ? {
+                        backgroundColor: '#FAFAFA',
+                        color: '#121212',
+                        opacity: 0.55,
+                        cursor: 'not-allowed',
+                        pointerEvents: 'none',
+                        boxShadow: 'none',
+                      } : undefined}
+                    >
+                      {t.eyeControl.gazeController}
+                    </button>
+                  )}
+                </>
+              )}
               <Slider label={t.params.expNeutral} value={params.expNeutral} min={0} max={1} step={0.01} onChange={(v) => onChange('expNeutral', v)} />
               <Slider label={t.params.expHappy} value={params.expHappy} min={0} max={1} step={0.01} onChange={(v) => onChange('expHappy', v)} />
               <Slider label={t.params.expAngry} value={params.expAngry} min={0} max={1} step={0.01} onChange={(v) => onChange('expAngry', v)} />

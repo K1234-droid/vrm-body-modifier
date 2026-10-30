@@ -162,7 +162,8 @@ export const translations = {
         },
         eyeControl: {
             lookAtCamera: "Lihat Kamera",
-            gazeController: "Pengontrol Tatapan"
+            gazeController: "Pengontrol Tatapan",
+            lookAtCameraDisabled: 'Untuk mengatur tatapan mata secara manual, silahkan nonaktifkan fitur lihat kamera.'
         },
         pwaUpdate: "Versi terbaru tersedia, klik untuk memuat ulang halaman",
         attention: "Perhatian",
@@ -341,7 +342,8 @@ export const translations = {
         },
         eyeControl: {
             lookAtCamera: "Look at Camera",
-            gazeController: "Gaze Controller"
+            gazeController: "Gaze Controller",
+            lookAtCameraDisabled: 'To adjust the eye gaze manually, please turn off the look at camera feature.'
         },
         pwaUpdate: "New version available, click to reload the page",
         attention: "Attention",

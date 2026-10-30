@@ -30,6 +30,8 @@ const App: React.FC = () => {
   const [isAnimation, setIsAnimation] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoBlink, setAutoBlink] = useState(false);
+  const [lookAtCamera, setLookAtCamera] = useState(false);
+  const [showGazeController, setShowGazeController] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [isCameraMode, setIsCameraMode] = useState(false);
   const [cameraRatio, setCameraRatio] = useState<CameraRatio>(() => {
@@ -335,6 +337,8 @@ const App: React.FC = () => {
     setIsAnimation(false);
     setIsPlaying(false);
     setAutoBlink(false);
+    setLookAtCamera(false);
+    setShowGazeController(false);
     setIsCameraMode(false);
     historyRef.current.clear();
     lastPushedState.current = DEFAULT_PARAMETERS;
@@ -888,6 +892,10 @@ const App: React.FC = () => {
           onPoseClipApplied={handlePoseClipApplied}
           isPlaying={isPlaying}
           autoBlink={autoBlink}
+          lookAtCamera={lookAtCamera}
+          setLookAtCamera={setLookAtCamera}
+          showGazeController={showGazeController}
+          setShowGazeController={setShowGazeController}
           backgroundImage={backgroundImage}
           setBackgroundImage={setBackgroundImage}
           isCameraMode={isCameraMode}
@@ -926,8 +934,13 @@ const App: React.FC = () => {
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
         language={language}
         setLanguage={setLanguage}
+        currentPose={currentPose}
         autoBlink={autoBlink}
         setAutoBlink={setAutoBlink}
+        lookAtCamera={lookAtCamera}
+        setLookAtCamera={setLookAtCamera}
+        showGazeController={showGazeController}
+        setShowGazeController={setShowGazeController}
         backgroundImage={backgroundImage}
         setBackgroundImage={setBackgroundImage}
         isCameraMode={isCameraMode}

@@ -21,6 +21,10 @@ interface ThreeCanvasProps {
   onPoseClipApplied: () => void;
   isPlaying: boolean;
   autoBlink: boolean;
+  lookAtCamera: boolean;
+  setLookAtCamera: (val: boolean) => void;
+  showGazeController: boolean;
+  setShowGazeController: (val: boolean) => void;
   backgroundImage: string | null;
   setBackgroundImage: (image: string | null) => void;
   isCameraMode: boolean;
@@ -51,6 +55,10 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   onPoseClipApplied,
   isPlaying,
   autoBlink,
+  lookAtCamera,
+  setLookAtCamera,
+  showGazeController,
+  setShowGazeController,
   backgroundImage,
   setBackgroundImage,
   isCameraMode,
@@ -121,8 +129,6 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
   const [eyeMenu, setEyeMenu] = useState<{ visible: boolean; x: number; y: number; bone?: THREE.Object3D } | null>(null);
   const isControllingBothEyesRef = useRef(false);
 
-  const [showGazeController, setShowGazeController] = useState(false);
-  const [lookAtCamera, setLookAtCamera] = useState(false);
   const lookAtCameraRef = useRef(false);
   const [gazePosition, setGazePosition] = useState({ x: 0, y: 0 });
   const gazePositionRef = useRef({ x: 0, y: 0 });
@@ -1366,24 +1372,11 @@ const ThreeCanvas: React.FC<ThreeCanvasProps> = ({
             <button onClick={() => setShowGazeController(false)} className="gaze-controller-close-btn" aria-label="Close Gaze Controller">&times;</button>
           </div>
 
-          <div className={`mb-0 gaze-controller-switch-group ${lookAtCamera ? 'no-bottom-margin' : ''}`}>
-            <div className="switch-container">
-              <label
-                className="switch-label cursor-pointer select-none"
-                onClick={() => setLookAtCamera(!lookAtCamera)}
-              >
-                {t.eyeControl.lookAtCamera}
-              </label>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={lookAtCamera}
-                  onChange={(e) => setLookAtCamera(e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-          </div>
+          {lookAtCamera && (
+            <p style={{ textAlign: 'center', marginTop: '1.45rem', marginBottom: '1.5rem' }}>
+              {t.eyeControl.lookAtCameraDisabled}
+            </p>
+          )}
 
           {!lookAtCamera && (
             <div
