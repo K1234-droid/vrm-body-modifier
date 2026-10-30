@@ -11,8 +11,10 @@ interface SidebarProps {
   onChange: (key: keyof BodyParameters, value: number | string, skipHistory?: boolean) => void;
   onReset: (target: 'expression' | 'body') => void;
   isFileLoaded: boolean;
-  isDarkMode: boolean;
-  onToggleDarkMode: () => void;
+  backgroundStyle: 'light' | 'dark' | 'black' | 'white' | 'green' | 'custom' | 'image';
+  setBackgroundStyle: (style: 'light' | 'dark' | 'black' | 'white' | 'green' | 'custom' | 'image') => void;
+  customBackgroundColor: string | null;
+  setCustomBackgroundColor: (color: string) => void;
   language: Language;
   setLanguage: (lang: Language) => void;
   currentPose: 'T-Pose' | 'A-Pose' | 'Stand' | 'Custom';
@@ -247,8 +249,9 @@ const MetaInfoRow: React.FC<{ label: string; value?: string }> = ({ label, value
   );
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, isDarkMode, onToggleDarkMode, language, setLanguage, currentPose, autoBlink, setAutoBlink, lookAtCamera, setLookAtCamera, showGazeController, setShowGazeController, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose, undo, redo, canUndo, canRedo, pushHistory }) => {
+const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFileLoaded, backgroundStyle, setBackgroundStyle, customBackgroundColor, setCustomBackgroundColor, language, setLanguage, currentPose, autoBlink, setAutoBlink, lookAtCamera, setLookAtCamera, showGazeController, setShowGazeController, backgroundImage, setBackgroundImage, isCameraMode, cameraRatio, setCameraRatio, resolutionPreset, setResolutionPreset, customResolution, setCustomResolution, isTransparent, setIsTransparent, onSave, isOpen, onClose, undo, redo, canUndo, canRedo, pushHistory }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('expression');
+  const backgroundFileInputRef = React.useRef<HTMLInputElement>(null);
   const [showInvalidModal, setShowInvalidModal] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
@@ -555,40 +558,119 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
         {activeTab === 'display' && (
           <div className="tab-content">
             <div className={`mb-4 mt-4 ${!isCameraMode ? 'pb-4' : ''}`}>
-              <h4 className="sub-judul">
+              <h4 className="sub-judul canvas-view-heading">
                 {t.canvasView}{isCameraMode ? `: ${cameraRatio === 'Custom' ? t.custom : cameraRatio}` : ''}
               </h4>
-              {backgroundImage ? (
-                <button
-                  onClick={() => setBackgroundImage(null)}
-                  className={`modal-save-btn w-full mt-2 ${isCameraMode ? 'mb-1' : 'mb-9'}`}
+              <div className="canvas-background-grid" role="group" aria-label={t.canvasView}>
+                {[
+                  { value: 'light' as const, color: '#e0e0e0', label: t.canvasBackgrounds.light },
+                  { value: 'dark' as const, color: '#121212', label: t.canvasBackgrounds.dark },
+                  { value: 'black' as const, color: '#000000', label: t.canvasBackgrounds.black },
+                  { value: 'white' as const, color: '#ffffff', label: t.canvasBackgrounds.white },
+                  { value: 'green' as const, color: '#00ff00', label: t.canvasBackgrounds.green },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`canvas-background-swatch ${backgroundStyle === option.value ? 'selected' : ''}`}
+                    style={{ backgroundColor: option.color }}
+                    onClick={() => setBackgroundStyle(option.value)}
+                    aria-label={option.label}
+                    aria-pressed={backgroundStyle === option.value}
+                  />
+                ))}
+                <label
+                  className={`canvas-background-swatch canvas-background-custom ${backgroundStyle === 'custom' ? 'selected' : ''}`}
+                  style={customBackgroundColor ? { backgroundColor: customBackgroundColor } : undefined}
+                  aria-label={t.canvasBackgrounds.custom}
+                  onClick={() => {
+                    if (customBackgroundColor) setBackgroundStyle('custom');
+                  }}
                 >
-                  {t.removeBackground}
-                </button>
-              ) : (
-                <div className="switch-container">
-                  <label
-                    className="switch-label select-none cursor-pointer"
-                    htmlFor="dark-mode-toggle"
-                  >
-                    {t.darkMode}
-                  </label>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      id="dark-mode-toggle"
-                      name="dark-mode-toggle"
-                      checked={isDarkMode}
-                      onChange={onToggleDarkMode}
+                  {!customBackgroundColor && <span className="canvas-background-custom-placeholder" aria-hidden="true">+</span>}
+                  <input
+                    type="color"
+                    value={customBackgroundColor || '#000000'}
+                    onChange={(event) => {
+                      setCustomBackgroundColor(event.target.value);
+                      setBackgroundStyle('custom');
+                    }}
+                    aria-label={t.canvasBackgrounds.custom}
+                  />
+                </label>
+              </div>
+
+              <input
+                ref={backgroundFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (loadEvent) => {
+                      if (typeof loadEvent.target?.result === 'string') {
+                        setBackgroundImage(loadEvent.target.result);
+                        setBackgroundStyle('image');
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                  event.target.value = '';
+                }}
+              />
+              <div className="canvas-background-upload-control">
+                <div
+                  className={`modal-save-btn canvas-background-upload-btn ${backgroundImage ? 'has-background' : 'empty-background'} ${backgroundStyle === 'image' ? 'selected' : ''}`}
+                  onClick={() => {
+                    if (backgroundImage && backgroundStyle !== 'image') {
+                      setBackgroundStyle('image');
+                    } else {
+                      backgroundFileInputRef.current?.click();
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      if (backgroundImage && backgroundStyle !== 'image') {
+                        setBackgroundStyle('image');
+                      } else {
+                        backgroundFileInputRef.current?.click();
+                      }
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {backgroundImage && (
+                    <span
+                      className="canvas-background-upload-preview"
+                      style={{ backgroundImage: `url("${backgroundImage}")` }}
+                      aria-hidden="true"
                     />
-                    <span className="slider"></span>
-                  </label>
+                  )}
+                  <span className="canvas-background-upload-text">{t.image}</span>
+                  <button
+                    type="button"
+                    id="remove-background-btn"
+                    className={`remove-background-btn ${backgroundImage ? '' : 'hidden'}`}
+                    aria-label={t.removeBackground}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setBackgroundImage(null);
+                      if (backgroundStyle === 'image') setBackgroundStyle('light');
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    ×
+                  </button>
                 </div>
-              )}
+              </div>
 
               {isCameraMode && (
                 <>
-                  <div className="switch-container mb-3">
+                  <div className="switch-container mb-3 canvas-transparent-switch">
                     <label
                       className="switch-label cursor-pointer select-none"
                       htmlFor="transparent-toggle"

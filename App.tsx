@@ -14,16 +14,27 @@ import { translations, getMetaValueLabel } from './utils/translations';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { HistoryManager } from './utils/history';
 
+type CanvasBackgroundStyle = 'light' | 'dark' | 'black' | 'white' | 'green' | 'custom' | 'image';
+
+const getCanvasBackgroundColor = (style: CanvasBackgroundStyle, customColor: string | null) => {
+  switch (style) {
+    case 'dark': return '#121212';
+    case 'black': return '#000000';
+    case 'white': return '#ffffff';
+    case 'green': return '#00ff00';
+    case 'custom': return customColor || '#e0e0e0';
+    default: return '#e0e0e0';
+  }
+};
+
 const App: React.FC = () => {
   const [params, setParams] = useState<BodyParameters>(DEFAULT_PARAMETERS);
   const [vrm, setVrm] = useState<VRM | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorDetail, setErrorDetail] = useState<{ version: string, value: string } | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('isDarkMode');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
+  const [canvasBackgroundStyle, setCanvasBackgroundStyle] = useState<CanvasBackgroundStyle>('light');
+  const [customCanvasBackground, setCustomCanvasBackground] = useState<string | null>(null);
   const [currentPose, setCurrentPose] = useState<'T-Pose' | 'A-Pose' | 'Stand' | 'Custom'>('T-Pose');
   const [poseClip, setPoseClip] = useState<THREE.AnimationClip | null>(null);
   const [customPoseTransforms, setCustomPoseTransforms] = useState<BoneTransforms | null>(null);
@@ -172,10 +183,6 @@ const App: React.FC = () => {
   }, [language]);
 
   const t = translations[language];
-
-  useEffect(() => {
-    localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
 
   useEffect(() => {
     localStorage.setItem('isTransparent', JSON.stringify(isTransparent));
@@ -530,6 +537,7 @@ const App: React.FC = () => {
     reader.onload = (e) => {
       if (typeof e.target?.result === 'string') {
         setBackgroundImage(e.target.result);
+        setCanvasBackgroundStyle('image');
       }
     };
     reader.readAsDataURL(file);
@@ -882,7 +890,8 @@ const App: React.FC = () => {
         <ThreeCanvas
           vrm={vrm}
           parameters={params}
-          isDarkMode={isDarkMode}
+          backgroundStyle={canvasBackgroundStyle}
+          backgroundColor={getCanvasBackgroundColor(canvasBackgroundStyle, customCanvasBackground)}
           language={language}
           currentPose={currentPose}
           setCurrentPose={handleSetCurrentPose}
@@ -896,8 +905,7 @@ const App: React.FC = () => {
           setLookAtCamera={setLookAtCamera}
           showGazeController={showGazeController}
           setShowGazeController={setShowGazeController}
-          backgroundImage={backgroundImage}
-          setBackgroundImage={setBackgroundImage}
+          backgroundImage={canvasBackgroundStyle === 'image' ? backgroundImage : null}
           isCameraMode={isCameraMode}
           setIsCameraMode={setIsCameraMode}
           cameraRatio={cameraRatio}
@@ -930,8 +938,10 @@ const App: React.FC = () => {
         onChange={handleParamChange}
         onReset={handleReset}
         isFileLoaded={!!vrm}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        backgroundStyle={canvasBackgroundStyle}
+        setBackgroundStyle={setCanvasBackgroundStyle}
+        customBackgroundColor={customCanvasBackground}
+        setCustomBackgroundColor={setCustomCanvasBackground}
         language={language}
         setLanguage={setLanguage}
         currentPose={currentPose}

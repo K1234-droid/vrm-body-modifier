@@ -62,6 +62,8 @@ button,
     --accent-color: #FAFAFA;
     --select-bg: rgba(255, 255, 255, 0.1);
     --select-hover-bg: rgba(255, 255, 255, 0.15);
+    --canvas-background-grid-gap: 1.15rem;
+    --canvas-background-upload-height: 50.4px;
     --border-color: rgba(128, 128, 128, 0.5);
     --gaze-border-color: #5A5A5A;
     --loading-gradient: linear-gradient(to left, #212121, #121212);
@@ -1141,6 +1143,212 @@ body.light-theme .modal-save-btn[data-tooltip]:hover::before {
     margin-top: 0.5rem;
     padding: 0.5rem 0;
     gap: 1rem;
+}
+
+.canvas-view-heading {
+    margin-bottom: var(--canvas-background-grid-gap);
+}
+
+.canvas-background-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.75rem;
+    margin-top: 0;
+}
+
+.canvas-background-swatch {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    background-clip: padding-box;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.canvas-background-swatch::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border: 2px solid #ffffff;
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.canvas-background-swatch::after {
+    content: "\2713";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #ffffff;
+    font-size: 1rem;
+    text-align: center;
+    -webkit-text-stroke: 1px #ffffff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.canvas-background-swatch.selected {
+    border-color: transparent;
+}
+
+.canvas-background-swatch.selected::before,
+.canvas-background-swatch.selected::after {
+    opacity: 1;
+}
+
+.canvas-background-custom {
+    display: block;
+    overflow: visible;
+}
+
+.canvas-background-custom-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    color: var(--accent-color);
+    font-size: 1.3rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.canvas-background-custom input {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.canvas-background-upload-control {
+    position: relative;
+    width: 100%;
+    margin-top: 0.75rem;
+}
+
+.canvas-background-upload-btn {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: var(--canvas-background-upload-height);
+    margin-top: 0;
+    box-sizing: border-box;
+    overflow: visible;
+    border: 1px solid var(--border-color);
+    background-size: cover;
+    background-position: center;
+    font-weight: 400;
+    transition: none;
+}
+
+.canvas-background-upload-btn:hover {
+    opacity: 1;
+}
+
+.canvas-background-upload-btn.empty-background {
+    background-color: transparent;
+    color: #E0E0E0;
+}
+
+.canvas-background-upload-btn.has-background {
+    background-color: transparent;
+    color: #ffffff;
+}
+
+.canvas-background-upload-preview {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: 7px;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+}
+
+.canvas-background-upload-btn.has-background::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 7px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.canvas-background-upload-btn::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 3;
+    border: 2px solid #ffffff;
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.canvas-background-upload-btn:not(.selected)::after {
+    border-color: transparent;
+}
+
+.canvas-background-upload-btn.selected {
+    border-color: transparent;
+}
+
+.canvas-background-upload-btn.selected::after {
+    opacity: 1;
+}
+
+.canvas-background-upload-btn svg,
+.canvas-background-upload-text {
+    position: relative;
+    z-index: 4;
+}
+
+#remove-background-btn {
+    position: relative;
+    top: 1px;
+    z-index: 4;
+    padding: 0 0 0 5px;
+    border: 0;
+    background: transparent;
+    color: #ffffff;
+    font-size: 1.5rem;
+    line-height: 1;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.canvas-transparent-switch {
+    margin-top: 1.1rem;
+}
+
+#remove-background-btn:hover {
+    opacity: 1;
 }
 
 .switch {

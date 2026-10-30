@@ -84,6 +84,14 @@ export const translations = {
         },
         canvasView: "Tampilan Kanvas",
         darkMode: "Tema Gelap",
+        canvasBackgrounds: {
+            light: "Light mode",
+            dark: "Dark mode",
+            black: "Hitam pekat",
+            white: "Putih terang",
+            green: "Hijau",
+            custom: "Warna kustom"
+        },
         resetParams: "Reset",
         resetTooltip: "Reset ke Default",
         resetCamera: "Reset Kamera",
@@ -264,6 +272,14 @@ export const translations = {
         },
         canvasView: "Canvas View",
         darkMode: "Dark Theme",
+        canvasBackgrounds: {
+            light: "Light mode",
+            dark: "Dark mode",
+            black: "Solid black",
+            white: "Bright white",
+            green: "Green",
+            custom: "Custom color"
+        },
         resetParams: "Reset",
         resetTooltip: "Reset to Default",
         resetCamera: "Reset Camera",
