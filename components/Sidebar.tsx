@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { BodyParameters, CameraRatio } from '../types';
+import { BodyParameters, CameraRatio, DEFAULT_PARAMETERS } from '../types';
 import { VRM } from '@pixiv/three-vrm';
 import LanguageSelector, { Language } from './LanguageSelector';
 import { translations, getMetaValueLabel } from '../utils/translations';
@@ -357,6 +357,10 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
 
           onChange(key as any, value, true);
         });
+
+        if (activeTab === 'body' && !Object.prototype.hasOwnProperty.call(json.params, 'stomachForwardSize')) {
+          onChange('stomachForwardSize', DEFAULT_PARAMETERS.stomachForwardSize, true);
+        }
 
         showToast(t.importSuccess);
       } catch (err) {
@@ -863,6 +867,7 @@ const Sidebar: React.FC<SidebarProps> = ({ vrm, params, onChange, onReset, isFil
               <Slider label={t.params.shoulderWidth} value={params.shoulderWidth} onChange={(v) => onChange('shoulderWidth', v)} className="mt-5" />
               <Slider label={t.params.chestSize} value={params.chestSize} onChange={(v) => onChange('chestSize', v)} />
               <Slider label={t.params.stomachSize} value={params.stomachSize} onChange={(v) => onChange('stomachSize', v)} />
+              <Slider label={t.params.stomachForwardSize} value={params.stomachForwardSize} onChange={(v) => onChange('stomachForwardSize', v)} />
               <Slider label={t.params.torsoHeight} value={params.torsoHeight} onChange={(v) => onChange('torsoHeight', v)} />
               <Slider label={t.params.waistWidth} value={params.waistWidth} onChange={(v) => onChange('waistWidth', v)} />
               <Slider label={t.params.hipSize} value={params.hipSize} onChange={(v) => onChange('hipSize', v)} />

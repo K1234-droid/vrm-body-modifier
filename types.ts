@@ -10,6 +10,7 @@ export interface BodyParameters {
   handSize: number;
   fingerSize: number;
   stomachSize: number;
+  stomachForwardSize: number;
   torsoHeight: number;
   waistWidth: number;
   hipSize: number;
@@ -59,6 +60,7 @@ export const DEFAULT_PARAMETERS: BodyParameters = {
   handSize: 1.0,
   fingerSize: 1.0,
   stomachSize: 1.0,
+  stomachForwardSize: 1.0,
   torsoHeight: 1.0,
   waistWidth: 1.0,
   hipSize: 1.0,

@@ -202,7 +202,7 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
             const position = mesh.geometry.getAttribute('position');
             const skinIndex = mesh.geometry.getAttribute('skinIndex');
             const skinWeight = mesh.geometry.getAttribute('skinWeight');
-            const chestIndex = mesh.skeleton.bones.indexOf(chestBone);
+            const chestIndex = mesh.skeleton.bones.indexOf(chestBone as THREE.Bone);
             if (!position || !skinIndex || !skinWeight || chestIndex < 0) return;
 
             // Work in the chest bone's bind space so the front/back mask follows
@@ -337,10 +337,10 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
             depthRange, direction,
         } = deformation;
         const chestDelta = chestSize - 1;
-        const lowerFadeStart = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.28;
-        const lowerFadeEnd = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.5;
-        const upperFadeStart = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.78;
-        const upperFadeEnd = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.98;
+        const lowerFadeStart = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.16;
+        const lowerFadeEnd = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.44;
+        const upperFadeStart = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.64;
+        const upperFadeEnd = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.84;
         const frontCenter = rearProjection + depthRange * 0.84;
         const frontRadius = depthRange * 0.32;
 
@@ -396,16 +396,16 @@ const applyRearHipDeformation = (vrm: VRM, hipSize: number) => {
         const mesh = object as THREE.SkinnedMesh;
         if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
 
+        const priorFrontDeformation = mesh.userData.frontChestDeformation || mesh.userData.frontStomachDeformation;
         let deformation = mesh.userData.rearHipDeformation;
         if (!deformation) {
             const position = mesh.geometry.getAttribute('position');
             const skinIndex = mesh.geometry.getAttribute('skinIndex');
             const skinWeight = mesh.geometry.getAttribute('skinWeight');
-            const hipIndex = mesh.skeleton.bones.indexOf(hipBone);
+            const hipIndex = mesh.skeleton.bones.indexOf(hipBone as THREE.Bone);
             if (!position || !skinIndex || !skinWeight || hipIndex < 0) return;
 
-            const chestDeformation = mesh.userData.frontChestDeformation;
-            const original = chestDeformation?.original || (() => {
+            const original = priorFrontDeformation?.original || (() => {
                 const values = new Float32Array(position.count * 3);
                 for (let i = 0; i < position.count; i++) {
                     values[i * 3] = position.getX(i);
@@ -487,7 +487,7 @@ const applyRearHipDeformation = (vrm: VRM, hipSize: number) => {
             rearProjection, lowerHeight, upperHeight, centerSide, halfWidth,
             depthRange, direction,
         } = deformation;
-        const chestDeformation = mesh.userData.frontChestDeformation;
+        const frontDeformation = mesh.userData.frontChestDeformation || mesh.userData.frontStomachDeformation;
         const sizeDelta = hipSize - 1;
         const lowerStart = lowerHeight + (upperHeight - lowerHeight) * 0.18;
         const lowerEnd = lowerHeight + (upperHeight - lowerHeight) * 0.36;
@@ -513,13 +513,177 @@ const applyRearHipDeformation = (vrm: VRM, hipSize: number) => {
             const outerMask = 1 - outerT * outerT * (3 - 2 * outerT);
             const displacement = depthRange * 0.35 * sizeDelta * weight * lowerMask * upperMask * backMask * sideMask * outerMask;
 
-            const x = chestDeformation ? position.getX(i) : original[offset];
-            const y = chestDeformation ? position.getY(i) : original[offset + 1];
-            const z = chestDeformation ? position.getZ(i) : original[offset + 2];
+            const x = frontDeformation ? position.getX(i) : original[offset];
+            const y = frontDeformation ? position.getY(i) : original[offset + 1];
+            const z = frontDeformation ? position.getZ(i) : original[offset + 2];
             position.setXYZ(i, x + direction.x * displacement, y + direction.y * displacement, z + direction.z * displacement);
         }
         position.needsUpdate = true;
         mesh.userData.exportDeformedGeometry = true;
+        if (mesh.geometry.index) mesh.geometry.computeVertexNormals();
+    });
+};
+
+const applyFrontStomachDeformation = (vrm: VRM, stomachSize: number, stomachForwardSize: number) => {
+    const stomachBone = vrm.humanoid?.getRawBoneNode(VRMHumanBoneName.Spine);
+    if (!stomachBone) return;
+
+    const boneRotation = stomachBone.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const frontInBone = new THREE.Vector3(0, 0, 1).applyQuaternion(boneRotation).normalize();
+    const upInBone = new THREE.Vector3(0, 1, 0).applyQuaternion(boneRotation).normalize();
+    const sideInBone = new THREE.Vector3(1, 0, 0).applyQuaternion(boneRotation).normalize();
+
+    vrm.scene.traverse((object) => {
+        const mesh = object as THREE.SkinnedMesh;
+        if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+
+        let deformation = mesh.userData.frontStomachDeformation;
+        if (!deformation) {
+            const position = mesh.geometry.getAttribute('position');
+            const skinIndex = mesh.geometry.getAttribute('skinIndex');
+            const skinWeight = mesh.geometry.getAttribute('skinWeight');
+            const stomachIndex = mesh.skeleton.bones.indexOf(stomachBone as THREE.Bone);
+            if (!position || !skinIndex || !skinWeight || stomachIndex < 0) return;
+
+            const chestOriginal = mesh.userData.frontChestDeformation?.original as Float32Array | undefined;
+            const original = chestOriginal || (() => {
+                const values = new Float32Array(position.count * 3);
+                for (let i = 0; i < position.count; i++) {
+                    values[i * 3] = position.getX(i);
+                    values[i * 3 + 1] = position.getY(i);
+                    values[i * 3 + 2] = position.getZ(i);
+                }
+                return values;
+            })();
+            const meshToBone = new THREE.Matrix4()
+                .multiplyMatrices(mesh.skeleton.boneInverses[stomachIndex], mesh.bindMatrix);
+            const boneToMesh = meshToBone.clone().invert();
+            const meshFront = frontInBone.clone().transformDirection(boneToMesh);
+            const weights = new Float32Array(position.count);
+            const projections = new Float32Array(position.count);
+            const heights = new Float32Array(position.count);
+            const sides = new Float32Array(position.count);
+            const vertex = new THREE.Vector3();
+            let frontProjection = Number.NEGATIVE_INFINITY;
+            let rearProjection = Number.POSITIVE_INFINITY;
+
+            for (let i = 0; i < position.count; i++) {
+                let boneWeight = 0;
+                for (let j = 0; j < 4; j++) {
+                    if (skinIndex.getComponent(i, j) === stomachIndex) boneWeight += skinWeight.getComponent(i, j);
+                }
+                vertex.set(original[i * 3], original[i * 3 + 1], original[i * 3 + 2]).applyMatrix4(meshToBone);
+                weights[i] = boneWeight;
+                projections[i] = vertex.dot(frontInBone);
+                heights[i] = vertex.dot(upInBone);
+                sides[i] = vertex.dot(sideInBone);
+                if (boneWeight > 0.05) {
+                    frontProjection = Math.max(frontProjection, projections[i]);
+                    rearProjection = Math.min(rearProjection, projections[i]);
+                }
+            }
+
+            const depthRange = frontProjection - rearProjection;
+            if (!Number.isFinite(depthRange) || depthRange <= 0) return;
+            let lowerHeight = Number.POSITIVE_INFINITY;
+            let upperHeight = Number.NEGATIVE_INFINITY;
+            let leftSide = Number.POSITIVE_INFINITY;
+            let rightSide = Number.NEGATIVE_INFINITY;
+            for (let i = 0; i < position.count; i++) {
+                if (weights[i] <= 0.05) continue;
+                lowerHeight = Math.min(lowerHeight, heights[i]);
+                upperHeight = Math.max(upperHeight, heights[i]);
+                leftSide = Math.min(leftSide, sides[i]);
+                rightSide = Math.max(rightSide, sides[i]);
+            }
+            if (!Number.isFinite(lowerHeight) || upperHeight <= lowerHeight || rightSide <= leftSide) return;
+
+            deformation = {
+                original,
+                weights,
+                projections,
+                heights,
+                sides,
+                rearProjection,
+                lowerHeight,
+                upperHeight,
+                centerSide: (leftSide + rightSide) * 0.5,
+                halfWidth: (rightSide - leftSide) * 0.5,
+                depthRange,
+                direction: meshFront,
+                sideDirection: sideInBone.clone().transformDirection(boneToMesh),
+            };
+            mesh.geometry = mesh.geometry.clone();
+            mesh.userData.frontStomachDeformation = deformation;
+        }
+
+        const position = mesh.geometry.getAttribute('position');
+        if (!position) return;
+        const { original, weights, projections, heights, sides, rearProjection, lowerHeight, upperHeight, centerSide, halfWidth, depthRange, direction, sideDirection } = deformation;
+        const lowerStart = lowerHeight + (upperHeight - lowerHeight) * 0.14;
+        const lowerEnd = lowerHeight + (upperHeight - lowerHeight) * 0.44;
+        const upperStart = lowerHeight + (upperHeight - lowerHeight) * 0.87;
+        const upperEnd = lowerHeight + (upperHeight - lowerHeight) * 0.99;
+        const frontCenter = rearProjection + depthRange * 0.84;
+        const frontRadius = depthRange * 0.42;
+        const stomachSizeDelta = stomachSize - 1;
+        const stomachForwardDelta = stomachForwardSize - 1;
+        const smootherStep = (value: number) => value * value * value * (value * (value * 6 - 15) + 10);
+
+        for (let i = 0; i < position.count; i++) {
+            const offset = i * 3;
+            const weightT = THREE.MathUtils.clamp((weights[i] - 0.02) / 0.18, 0, 1);
+            const weight = weightT * weightT * (3 - 2 * weightT);
+            const lowerT = THREE.MathUtils.clamp((heights[i] - lowerStart) / (lowerEnd - lowerStart), 0, 1);
+            const lowerMask = smootherStep(lowerT);
+            const profileT = THREE.MathUtils.clamp(
+                (projections[i] - (rearProjection + depthRange * 0.55)) / (depthRange * 0.45),
+                0,
+                1,
+            );
+            const topArc = Math.sin(Math.PI * profileT) ** 2;
+            const topLift = (upperHeight - lowerHeight) * 0.05 * topArc;
+            const upperT = THREE.MathUtils.clamp((heights[i] - (upperStart + topLift)) / (upperEnd + topLift - upperStart - topLift), 0, 1);
+            const upperMask = 1 - smootherStep(upperT);
+            const bellyCenterHeight = lowerHeight + (upperHeight - lowerHeight) * 0.62 + topLift;
+            const bellyHeightRadius = (upperHeight - lowerHeight) * 0.23;
+            const bellyHeightDistance = (heights[i] - bellyCenterHeight) / bellyHeightRadius;
+            const forwardHeightMask = Math.exp(-0.5 * bellyHeightDistance * bellyHeightDistance);
+            const frontDistance = (projections[i] - frontCenter) / frontRadius;
+            const frontFalloff = Math.exp(-0.5 * frontDistance * frontDistance);
+            const frontMask = THREE.MathUtils.smoothstep(
+                projections[i],
+                rearProjection + depthRange * 0.5,
+                rearProjection + depthRange * 0.74,
+            ) * frontFalloff;
+            const sideRatio = Math.abs(sides[i] - centerSide) / halfWidth;
+            const frontSideMask = Math.exp(-0.5 * (sideRatio / 1.02) ** 4);
+            const frontOuterT = THREE.MathUtils.clamp((sideRatio - 1.12) / 0.22, 0, 1);
+            const frontOuterMask = 1 - frontOuterT * frontOuterT * (3 - 2 * frontOuterT);
+            const upperForwardT = THREE.MathUtils.clamp(
+                (heights[i] - (lowerHeight + (upperHeight - lowerHeight) * 0.58)) / ((upperHeight - lowerHeight) * 0.3),
+                0,
+                1,
+            );
+            const upperForwardBoost = smootherStep(upperForwardT) * 0.3;
+            const forwardDisplacement = depthRange * 0.5 * stomachForwardDelta * weight * forwardHeightMask * frontMask * frontSideMask * frontOuterMask * (1 + upperForwardBoost);
+            const sideDistance = (sideRatio - 0.76) / 0.28;
+            const sideMask = Math.exp(-0.5 * sideDistance * sideDistance);
+            const sideOuterT = THREE.MathUtils.clamp((sideRatio - 1.0) / 0.14, 0, 1);
+            const sideOuterMask = 1 - sideOuterT * sideOuterT * (3 - 2 * sideOuterT);
+            const sideDisplacement = depthRange * 0.15 * stomachSizeDelta * weight * lowerMask * upperMask * sideMask * sideOuterMask;
+            const sideSign = sides[i] < centerSide ? -1 : 1;
+            const baseX = mesh.userData.frontChestDeformation ? position.getX(i) : original[offset];
+            const baseY = mesh.userData.frontChestDeformation ? position.getY(i) : original[offset + 1];
+            const baseZ = mesh.userData.frontChestDeformation ? position.getZ(i) : original[offset + 2];
+            position.setXYZ(
+                i,
+                baseX + direction.x * forwardDisplacement + sideDirection.x * sideSign * sideDisplacement,
+                baseY + direction.y * forwardDisplacement + sideDirection.y * sideSign * sideDisplacement,
+                baseZ + direction.z * forwardDisplacement + sideDirection.z * sideSign * sideDisplacement,
+            );
+        }
+        position.needsUpdate = true;
         if (mesh.geometry.index) mesh.geometry.computeVertexNormals();
     });
 };
@@ -587,7 +751,8 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
     };
 
     setDesired(VRMHumanBoneName.Hips, 1.0, 1.0, 1.0);
-    setDesired(VRMHumanBoneName.Spine, params.waistWidth, params.torsoHeight, params.stomachSize);
+    const stomachWidthScale = 1 + (params.stomachSize - 1) * 0.15;
+    setDesired(VRMHumanBoneName.Spine, params.waistWidth * stomachWidthScale, params.torsoHeight, params.stomachSize);
 
     const chestWidth = params.shoulderWidth;
 
@@ -760,6 +925,7 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
 
     vrm.scene.updateMatrixWorld(true);
     applyFrontChestDeformation(vrm, chestBone, params.chestSize);
+    applyFrontStomachDeformation(vrm, params.stomachSize, params.stomachForwardSize);
     applyRearHipDeformation(vrm, params.hipSize);
 
     updateColliderRadii(vrm, params.headSize);
