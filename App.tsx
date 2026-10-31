@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import LanguageSelector, { Language } from './components/LanguageSelector';
 import { translations, getMetaValueLabel } from './utils/translations';
+import { seoDescriptions } from './utils/seo';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import { HistoryManager } from './utils/history';
 
@@ -183,6 +184,14 @@ const App: React.FC = () => {
   }, [language]);
 
   const t = translations[language];
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    const metaDescription = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.content = seoDescriptions[language];
+    }
+  }, [language]);
 
   useEffect(() => {
     localStorage.setItem('isTransparent', JSON.stringify(isTransparent));
