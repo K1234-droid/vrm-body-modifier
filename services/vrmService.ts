@@ -181,7 +181,6 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
     const chestBone = vrm.humanoid?.getRawBoneNode(chestBoneName);
     if (!chestBone) return;
 
-    // loadVRM normalizes both VRM versions so the avatar's front faces world +Z.
     const frontWorld = new THREE.Vector3(0, 0, 1);
     const frontInBone = frontWorld
         .applyQuaternion(chestBone.getWorldQuaternion(new THREE.Quaternion()).invert())
@@ -205,8 +204,6 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
             const chestIndex = mesh.skeleton.bones.indexOf(chestBone as THREE.Bone);
             if (!position || !skinIndex || !skinWeight || chestIndex < 0) return;
 
-            // Work in the chest bone's bind space so the front/back mask follows
-            // the model's own orientation and bone layout.
             const meshToBone = new THREE.Matrix4()
                 .multiplyMatrices(mesh.skeleton.boneInverses[chestIndex], mesh.bindMatrix);
             const boneToMesh = meshToBone.clone().invert();
@@ -259,9 +256,6 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
             }
             if (!Number.isFinite(lowerChestHeight) || upperChestHeight <= lowerChestHeight || rightChestSide <= leftChestSide) return;
 
-            // Smooth the chest influence across neighboring vertices. VRM
-            // skin weights can change sharply at a bone boundary, which would
-            // otherwise leave a visibly jagged deformation line.
             const vertexGroups = new Int32Array(position.count);
             const groupByPosition = new Map<string, number>();
             const groupSums: number[] = [];
@@ -324,7 +318,6 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
                 depthRange: frontProjection - rearProjection,
                 direction: meshFront,
             };
-            // Keep a private geometry copy so shared meshes are not deformed together.
             mesh.geometry = mesh.geometry.clone();
             mesh.userData.frontChestDeformation = deformation;
         }
@@ -346,8 +339,6 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
 
         for (let i = 0; i < position.count; i++) {
             const offset = i * 3;
-            // Reach full influence early so variations in ordinary chest skin
-            // weights do not create small dents across the front surface.
             const rawWeight = THREE.MathUtils.clamp((vertexWeights[i] - 0.02) / 0.18, 0, 1);
             const weight = rawWeight * rawWeight * (3 - 2 * rawWeight);
             const heightT = THREE.MathUtils.clamp((heights[i] - lowerFadeStart) / (lowerFadeEnd - lowerFadeStart), 0, 1);
@@ -356,18 +347,12 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
             const upperMask = 1 - upperT * upperT * (3 - 2 * upperT);
             const frontDistance = (projections[i] - frontCenter) / frontRadius;
             const frontMask = Math.exp(-0.5 * frontDistance * frontDistance);
-            // Favor two broad chest lobes over the centerline, with a soft
-            // outer fade before the shoulders and arms. Gaussian profiles
-            // make the plan-view contour oval instead of pointed.
             const sideRatio = Math.abs(sides[i] - chestCenterSide) / chestHalfWidth;
             const lobeDistance = (sideRatio - 0.36) / 0.25;
             const lobeMask = Math.exp(-0.5 * lobeDistance * lobeDistance);
             const outerT = THREE.MathUtils.clamp((sideRatio - 0.84) / 0.22, 0, 1);
             const outerMask = 1 - outerT * outerT * (3 - 2 * outerT);
             const sideMask = lobeMask * outerMask;
-            // Use a rounded front-only bulge with soft side and height fades.
-            // This keeps the lower torso and shoulders still and avoids a
-            // linear wedge when the model is viewed from either side.
             const displacement = depthRange * 0.55 * chestDelta * weight * lowerMask * upperMask * frontMask * sideMask;
             position.setXYZ(
                 i,
@@ -377,8 +362,6 @@ const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, c
             );
         }
         position.needsUpdate = true;
-        // Recomputing normals on non-indexed meshes makes every triangle look
-        // flat, so keep the model's authored normals in that common VRM case.
         if (mesh.geometry.index) mesh.geometry.computeVertexNormals();
     });
 };
@@ -752,15 +735,16 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
 
     setDesired(VRMHumanBoneName.Hips, 1.0, 1.0, 1.0);
     const stomachWidthScale = 1 + (params.stomachSize - 1) * 0.15;
+    const shoulderDelta = params.shoulderWidth - 1;
+    const shoulderChestScale = 1 + shoulderDelta * 0.02;
+    const shoulderUpperChestScale = 1 + shoulderDelta * 0.08;
     setDesired(VRMHumanBoneName.Spine, params.waistWidth * stomachWidthScale, params.torsoHeight, params.stomachSize);
 
-    const chestWidth = params.shoulderWidth;
-
     if (hasUpperChest) {
-        setDesired(VRMHumanBoneName.Chest, chestWidth, 1.0, params.stomachSize);
-        setDesired(VRMHumanBoneName.UpperChest, chestWidth, 1.0, 1.0);
+        setDesired(VRMHumanBoneName.Chest, shoulderChestScale, 1.0, params.stomachSize);
+        setDesired(VRMHumanBoneName.UpperChest, shoulderUpperChestScale, 1.0, 1.0);
     } else {
-        setDesired(VRMHumanBoneName.Chest, chestWidth, 1.0, 1.0);
+        setDesired(VRMHumanBoneName.Chest, shoulderChestScale, 1.0, 1.0);
     }
 
     setDesired(VRMHumanBoneName.Neck, params.neckWidth, params.neckHeight, params.neckWidth);
@@ -885,12 +869,39 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
     applyParams(VRMHumanBoneName.Neck, chestBone);
     applyParams(VRMHumanBoneName.Head, VRMHumanBoneName.Neck);
 
+    const leftShoulder = vrm.humanoid.getRawBoneNode(VRMHumanBoneName.LeftShoulder);
+    const rightShoulder = vrm.humanoid.getRawBoneNode(VRMHumanBoneName.RightShoulder);
+    const leftShoulderInitial = leftShoulder?.userData.initialPosition as THREE.Vector3 | undefined;
+    const rightShoulderInitial = rightShoulder?.userData.initialPosition as THREE.Vector3 | undefined;
+    const shoulderWidthAxis: 'x' | 'z' = leftShoulderInitial && rightShoulderInitial
+        && Math.abs(leftShoulderInitial.x - rightShoulderInitial.x) < Math.abs(leftShoulderInitial.z - rightShoulderInitial.z)
+        ? 'z'
+        : 'x';
+    const moveShoulderOutward = (
+        shoulder: THREE.Object3D | null,
+        initialPosition: THREE.Vector3 | undefined,
+        oppositeInitialPosition: THREE.Vector3 | undefined,
+        upperArmBone: VRMHumanBoneName,
+    ) => {
+        if (!shoulder || !initialPosition || !oppositeInitialPosition) return;
+        const upperArm = vrm.humanoid.getRawBoneNode(upperArmBone);
+        const upperArmInitialPosition = upperArm?.userData.initialPosition as THREE.Vector3 | undefined;
+        const upperArmLength = upperArmInitialPosition?.length() ?? 0;
+        const side = Math.sign(initialPosition[shoulderWidthAxis] - oppositeInitialPosition[shoulderWidthAxis])
+            || (upperArmBone === VRMHumanBoneName.LeftUpperArm ? 1 : -1);
+        const outwardOffset = side * upperArmLength * 0.28 * shoulderDelta;
+        shoulder.position[shoulderWidthAxis] = initialPosition[shoulderWidthAxis] + outwardOffset;
+        shoulder.position.y = initialPosition.y + upperArmLength * 0.05 * shoulderDelta;
+    };
+
     applyParams(VRMHumanBoneName.LeftShoulder, chestBone);
+    moveShoulderOutward(leftShoulder, leftShoulderInitial, rightShoulderInitial, VRMHumanBoneName.LeftUpperArm);
     applyParams(VRMHumanBoneName.LeftUpperArm, VRMHumanBoneName.LeftShoulder);
     applyParams(VRMHumanBoneName.LeftLowerArm, VRMHumanBoneName.LeftUpperArm);
     applyParams(VRMHumanBoneName.LeftHand, VRMHumanBoneName.LeftLowerArm);
 
     applyParams(VRMHumanBoneName.RightShoulder, chestBone);
+    moveShoulderOutward(rightShoulder, rightShoulderInitial, leftShoulderInitial, VRMHumanBoneName.RightUpperArm);
     applyParams(VRMHumanBoneName.RightUpperArm, VRMHumanBoneName.RightShoulder);
     applyParams(VRMHumanBoneName.RightLowerArm, VRMHumanBoneName.RightUpperArm);
     applyParams(VRMHumanBoneName.RightHand, VRMHumanBoneName.RightLowerArm);
