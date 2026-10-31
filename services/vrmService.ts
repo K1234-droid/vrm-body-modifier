@@ -177,6 +177,353 @@ const updateColliderRadii = (vrm: VRM, headScale: number) => {
     });
 };
 
+const applyFrontChestDeformation = (vrm: VRM, chestBoneName: VRMHumanBoneName, chestSize: number) => {
+    const chestBone = vrm.humanoid?.getRawBoneNode(chestBoneName);
+    if (!chestBone) return;
+
+    // loadVRM normalizes both VRM versions so the avatar's front faces world +Z.
+    const frontWorld = new THREE.Vector3(0, 0, 1);
+    const frontInBone = frontWorld
+        .applyQuaternion(chestBone.getWorldQuaternion(new THREE.Quaternion()).invert())
+        .normalize();
+    const upInBone = new THREE.Vector3(0, 1, 0)
+        .applyQuaternion(chestBone.getWorldQuaternion(new THREE.Quaternion()).invert())
+        .normalize();
+    const sideInBone = new THREE.Vector3(1, 0, 0)
+        .applyQuaternion(chestBone.getWorldQuaternion(new THREE.Quaternion()).invert())
+        .normalize();
+
+    vrm.scene.traverse((object) => {
+        const mesh = object as THREE.SkinnedMesh;
+        if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+
+        let deformation = mesh.userData.frontChestDeformation;
+        if (!deformation) {
+            const position = mesh.geometry.getAttribute('position');
+            const skinIndex = mesh.geometry.getAttribute('skinIndex');
+            const skinWeight = mesh.geometry.getAttribute('skinWeight');
+            const chestIndex = mesh.skeleton.bones.indexOf(chestBone);
+            if (!position || !skinIndex || !skinWeight || chestIndex < 0) return;
+
+            // Work in the chest bone's bind space so the front/back mask follows
+            // the model's own orientation and bone layout.
+            const meshToBone = new THREE.Matrix4()
+                .multiplyMatrices(mesh.skeleton.boneInverses[chestIndex], mesh.bindMatrix);
+            const boneToMesh = meshToBone.clone().invert();
+            const meshFront = frontInBone.clone().transformDirection(boneToMesh);
+            const original = new Float32Array(position.count * 3);
+            const vertexWeights = new Float32Array(position.count);
+            const projections = new Float32Array(position.count);
+            const heights = new Float32Array(position.count);
+            const sides = new Float32Array(position.count);
+            const vertex = new THREE.Vector3();
+            let rearProjection = Number.POSITIVE_INFINITY;
+            let frontProjection = Number.NEGATIVE_INFINITY;
+
+            for (let i = 0; i < position.count; i++) {
+                original[i * 3] = position.getX(i);
+                original[i * 3 + 1] = position.getY(i);
+                original[i * 3 + 2] = position.getZ(i);
+                let chestWeight = 0;
+                for (let j = 0; j < 4; j++) {
+                    if (skinIndex.getComponent(i, j) === chestIndex) {
+                        chestWeight += skinWeight.getComponent(i, j);
+                    }
+                }
+                vertex.fromBufferAttribute(position, i).applyMatrix4(meshToBone);
+                const projection = vertex.dot(frontInBone);
+                vertexWeights[i] = chestWeight;
+                projections[i] = projection;
+                heights[i] = vertex.dot(upInBone);
+                sides[i] = vertex.dot(sideInBone);
+                if (chestWeight > 0.05) {
+                    rearProjection = Math.min(rearProjection, projection);
+                    frontProjection = Math.max(frontProjection, projection);
+                }
+            }
+
+            if (!Number.isFinite(rearProjection) || frontProjection <= rearProjection) return;
+
+            const frontRegionStart = rearProjection + (frontProjection - rearProjection) * 0.3;
+            let lowerChestHeight = Number.POSITIVE_INFINITY;
+            let upperChestHeight = Number.NEGATIVE_INFINITY;
+            let leftChestSide = Number.POSITIVE_INFINITY;
+            let rightChestSide = Number.NEGATIVE_INFINITY;
+            for (let i = 0; i < position.count; i++) {
+                if (vertexWeights[i] > 0.05 && projections[i] >= frontRegionStart) {
+                    lowerChestHeight = Math.min(lowerChestHeight, heights[i]);
+                    upperChestHeight = Math.max(upperChestHeight, heights[i]);
+                    leftChestSide = Math.min(leftChestSide, sides[i]);
+                    rightChestSide = Math.max(rightChestSide, sides[i]);
+                }
+            }
+            if (!Number.isFinite(lowerChestHeight) || upperChestHeight <= lowerChestHeight || rightChestSide <= leftChestSide) return;
+
+            // Smooth the chest influence across neighboring vertices. VRM
+            // skin weights can change sharply at a bone boundary, which would
+            // otherwise leave a visibly jagged deformation line.
+            const vertexGroups = new Int32Array(position.count);
+            const groupByPosition = new Map<string, number>();
+            const groupSums: number[] = [];
+            const groupCounts: number[] = [];
+            for (let i = 0; i < position.count; i++) {
+                const x = position.getX(i);
+                const y = position.getY(i);
+                const z = position.getZ(i);
+                const key = `${Math.round(x * 10000)},${Math.round(y * 10000)},${Math.round(z * 10000)}`;
+                let group = groupByPosition.get(key);
+                if (group === undefined) {
+                    group = groupSums.length;
+                    groupByPosition.set(key, group);
+                    groupSums.push(0);
+                    groupCounts.push(0);
+                }
+                vertexGroups[i] = group;
+                groupSums[group] += vertexWeights[i];
+                groupCounts[group]++;
+            }
+
+            const neighbors = Array.from({ length: groupSums.length }, () => new Set<number>());
+            const triangleIndices = mesh.geometry.index?.array;
+            const triangleCount = triangleIndices ? triangleIndices.length : position.count;
+            for (let i = 0; i + 2 < triangleCount; i += 3) {
+                const a = vertexGroups[triangleIndices ? triangleIndices[i] : i];
+                const b = vertexGroups[triangleIndices ? triangleIndices[i + 1] : i + 1];
+                const c = vertexGroups[triangleIndices ? triangleIndices[i + 2] : i + 2];
+                if (a === b || b === c || c === a) continue;
+                neighbors[a].add(b); neighbors[a].add(c);
+                neighbors[b].add(a); neighbors[b].add(c);
+                neighbors[c].add(a); neighbors[c].add(b);
+            }
+
+            let smoothedWeights = groupSums.map((sum, i) => sum / groupCounts[i]);
+            for (let pass = 0; pass < 3; pass++) {
+                smoothedWeights = smoothedWeights.map((weight, i) => {
+                    if (neighbors[i].size === 0) return weight;
+                    let neighborAverage = 0;
+                    neighbors[i].forEach((neighbor) => { neighborAverage += smoothedWeights[neighbor]; });
+                    neighborAverage /= neighbors[i].size;
+                    return weight * 0.5 + neighborAverage * 0.5;
+                });
+            }
+            for (let i = 0; i < position.count; i++) {
+                vertexWeights[i] = smoothedWeights[vertexGroups[i]];
+            }
+
+            deformation = {
+                original,
+                vertexWeights,
+                projections,
+                heights,
+                sides,
+                rearProjection,
+                lowerChestHeight,
+                upperChestHeight,
+                chestCenterSide: (leftChestSide + rightChestSide) * 0.5,
+                chestHalfWidth: (rightChestSide - leftChestSide) * 0.5,
+                depthRange: frontProjection - rearProjection,
+                direction: meshFront,
+            };
+            // Keep a private geometry copy so shared meshes are not deformed together.
+            mesh.geometry = mesh.geometry.clone();
+            mesh.userData.frontChestDeformation = deformation;
+        }
+
+        const position = mesh.geometry.getAttribute('position');
+        if (!position) return;
+        const {
+            original, vertexWeights, projections, heights, sides, rearProjection,
+            lowerChestHeight, upperChestHeight, chestCenterSide, chestHalfWidth,
+            depthRange, direction,
+        } = deformation;
+        const chestDelta = chestSize - 1;
+        const lowerFadeStart = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.28;
+        const lowerFadeEnd = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.5;
+        const upperFadeStart = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.78;
+        const upperFadeEnd = lowerChestHeight + (upperChestHeight - lowerChestHeight) * 0.98;
+        const frontCenter = rearProjection + depthRange * 0.84;
+        const frontRadius = depthRange * 0.32;
+
+        for (let i = 0; i < position.count; i++) {
+            const offset = i * 3;
+            // Reach full influence early so variations in ordinary chest skin
+            // weights do not create small dents across the front surface.
+            const rawWeight = THREE.MathUtils.clamp((vertexWeights[i] - 0.02) / 0.18, 0, 1);
+            const weight = rawWeight * rawWeight * (3 - 2 * rawWeight);
+            const heightT = THREE.MathUtils.clamp((heights[i] - lowerFadeStart) / (lowerFadeEnd - lowerFadeStart), 0, 1);
+            const lowerMask = heightT * heightT * (3 - 2 * heightT);
+            const upperT = THREE.MathUtils.clamp((heights[i] - upperFadeStart) / (upperFadeEnd - upperFadeStart), 0, 1);
+            const upperMask = 1 - upperT * upperT * (3 - 2 * upperT);
+            const frontDistance = (projections[i] - frontCenter) / frontRadius;
+            const frontMask = Math.exp(-0.5 * frontDistance * frontDistance);
+            // Favor two broad chest lobes over the centerline, with a soft
+            // outer fade before the shoulders and arms. Gaussian profiles
+            // make the plan-view contour oval instead of pointed.
+            const sideRatio = Math.abs(sides[i] - chestCenterSide) / chestHalfWidth;
+            const lobeDistance = (sideRatio - 0.36) / 0.25;
+            const lobeMask = Math.exp(-0.5 * lobeDistance * lobeDistance);
+            const outerT = THREE.MathUtils.clamp((sideRatio - 0.84) / 0.22, 0, 1);
+            const outerMask = 1 - outerT * outerT * (3 - 2 * outerT);
+            const sideMask = lobeMask * outerMask;
+            // Use a rounded front-only bulge with soft side and height fades.
+            // This keeps the lower torso and shoulders still and avoids a
+            // linear wedge when the model is viewed from either side.
+            const displacement = depthRange * 0.55 * chestDelta * weight * lowerMask * upperMask * frontMask * sideMask;
+            position.setXYZ(
+                i,
+                original[offset] + direction.x * displacement,
+                original[offset + 1] + direction.y * displacement,
+                original[offset + 2] + direction.z * displacement,
+            );
+        }
+        position.needsUpdate = true;
+        // Recomputing normals on non-indexed meshes makes every triangle look
+        // flat, so keep the model's authored normals in that common VRM case.
+        if (mesh.geometry.index) mesh.geometry.computeVertexNormals();
+    });
+};
+
+const applyRearHipDeformation = (vrm: VRM, hipSize: number) => {
+    const hipBone = vrm.humanoid?.getRawBoneNode(VRMHumanBoneName.Hips);
+    if (!hipBone) return;
+
+    const boneRotation = hipBone.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const backInBone = new THREE.Vector3(0, 0, -1).applyQuaternion(boneRotation).normalize();
+    const upInBone = new THREE.Vector3(0, 1, 0).applyQuaternion(boneRotation).normalize();
+    const sideInBone = new THREE.Vector3(1, 0, 0).applyQuaternion(boneRotation).normalize();
+
+    vrm.scene.traverse((object) => {
+        const mesh = object as THREE.SkinnedMesh;
+        if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+
+        let deformation = mesh.userData.rearHipDeformation;
+        if (!deformation) {
+            const position = mesh.geometry.getAttribute('position');
+            const skinIndex = mesh.geometry.getAttribute('skinIndex');
+            const skinWeight = mesh.geometry.getAttribute('skinWeight');
+            const hipIndex = mesh.skeleton.bones.indexOf(hipBone);
+            if (!position || !skinIndex || !skinWeight || hipIndex < 0) return;
+
+            const chestDeformation = mesh.userData.frontChestDeformation;
+            const original = chestDeformation?.original || (() => {
+                const values = new Float32Array(position.count * 3);
+                for (let i = 0; i < position.count; i++) {
+                    values[i * 3] = position.getX(i);
+                    values[i * 3 + 1] = position.getY(i);
+                    values[i * 3 + 2] = position.getZ(i);
+                }
+                return values;
+            })();
+
+            const meshToBone = new THREE.Matrix4()
+                .multiplyMatrices(mesh.skeleton.boneInverses[hipIndex], mesh.bindMatrix);
+            const boneToMesh = meshToBone.clone().invert();
+            const meshBack = backInBone.clone().transformDirection(boneToMesh);
+            const weights = new Float32Array(position.count);
+            const projections = new Float32Array(position.count);
+            const heights = new Float32Array(position.count);
+            const sides = new Float32Array(position.count);
+            const vertex = new THREE.Vector3();
+            let frontProjection = Number.POSITIVE_INFINITY;
+            let rearProjection = Number.NEGATIVE_INFINITY;
+
+            for (let i = 0; i < position.count; i++) {
+                let hipWeight = 0;
+                for (let j = 0; j < 4; j++) {
+                    if (skinIndex.getComponent(i, j) === hipIndex) hipWeight += skinWeight.getComponent(i, j);
+                }
+                vertex.set(original[i * 3], original[i * 3 + 1], original[i * 3 + 2]).applyMatrix4(meshToBone);
+                weights[i] = hipWeight;
+                projections[i] = vertex.dot(backInBone);
+                heights[i] = vertex.dot(upInBone);
+                sides[i] = vertex.dot(sideInBone);
+                if (hipWeight > 0.05) {
+                    frontProjection = Math.min(frontProjection, projections[i]);
+                    rearProjection = Math.max(rearProjection, projections[i]);
+                }
+            }
+
+            const depthRange = rearProjection - frontProjection;
+            if (!Number.isFinite(depthRange) || depthRange <= 0) return;
+
+            const backRegionStart = frontProjection + depthRange * 0.3;
+            let lowerHeight = Number.POSITIVE_INFINITY;
+            let upperHeight = Number.NEGATIVE_INFINITY;
+            let leftSide = Number.POSITIVE_INFINITY;
+            let rightSide = Number.NEGATIVE_INFINITY;
+            for (let i = 0; i < position.count; i++) {
+                if (weights[i] > 0.05 && projections[i] >= backRegionStart) {
+                    lowerHeight = Math.min(lowerHeight, heights[i]);
+                    upperHeight = Math.max(upperHeight, heights[i]);
+                    leftSide = Math.min(leftSide, sides[i]);
+                    rightSide = Math.max(rightSide, sides[i]);
+                }
+            }
+            if (!Number.isFinite(lowerHeight) || upperHeight <= lowerHeight || rightSide <= leftSide) return;
+
+            deformation = {
+                original,
+                weights,
+                projections,
+                heights,
+                sides,
+                frontProjection,
+                rearProjection,
+                lowerHeight,
+                upperHeight,
+                centerSide: (leftSide + rightSide) * 0.5,
+                halfWidth: (rightSide - leftSide) * 0.5,
+                depthRange,
+                direction: meshBack,
+            };
+            mesh.geometry = mesh.geometry.clone();
+            mesh.userData.rearHipDeformation = deformation;
+        }
+
+        const position = mesh.geometry.getAttribute('position');
+        if (!position) return;
+        const {
+            original, weights, projections, heights, sides,
+            rearProjection, lowerHeight, upperHeight, centerSide, halfWidth,
+            depthRange, direction,
+        } = deformation;
+        const chestDeformation = mesh.userData.frontChestDeformation;
+        const sizeDelta = hipSize - 1;
+        const lowerStart = lowerHeight + (upperHeight - lowerHeight) * 0.18;
+        const lowerEnd = lowerHeight + (upperHeight - lowerHeight) * 0.36;
+        const upperStart = lowerHeight + (upperHeight - lowerHeight) * 0.62;
+        const upperEnd = lowerHeight + (upperHeight - lowerHeight) * 0.78;
+        const backCenter = rearProjection - depthRange * 0.08;
+        const backRadius = depthRange * 0.3;
+
+        for (let i = 0; i < position.count; i++) {
+            const offset = i * 3;
+            const weightT = THREE.MathUtils.clamp((weights[i] - 0.02) / 0.18, 0, 1);
+            const weight = weightT * weightT * (3 - 2 * weightT);
+            const lowerT = THREE.MathUtils.clamp((heights[i] - lowerStart) / (lowerEnd - lowerStart), 0, 1);
+            const upperT = THREE.MathUtils.clamp((heights[i] - upperStart) / (upperEnd - upperStart), 0, 1);
+            const lowerMask = lowerT * lowerT * (3 - 2 * lowerT);
+            const upperMask = 1 - upperT * upperT * (3 - 2 * upperT);
+            const backDistance = (projections[i] - backCenter) / backRadius;
+            const backMask = Math.exp(-0.5 * backDistance * backDistance);
+            const sideRatio = Math.abs(sides[i] - centerSide) / halfWidth;
+            const sideDistance = (sideRatio - 0.22) / 0.52;
+            const sideMask = Math.exp(-0.5 * sideDistance * sideDistance);
+            const outerT = THREE.MathUtils.clamp((sideRatio - 0.95) / 0.22, 0, 1);
+            const outerMask = 1 - outerT * outerT * (3 - 2 * outerT);
+            const displacement = depthRange * 0.35 * sizeDelta * weight * lowerMask * upperMask * backMask * sideMask * outerMask;
+
+            const x = chestDeformation ? position.getX(i) : original[offset];
+            const y = chestDeformation ? position.getY(i) : original[offset + 1];
+            const z = chestDeformation ? position.getZ(i) : original[offset + 2];
+            position.setXYZ(i, x + direction.x * displacement, y + direction.y * displacement, z + direction.z * displacement);
+        }
+        position.needsUpdate = true;
+        mesh.userData.exportDeformedGeometry = true;
+        if (mesh.geometry.index) mesh.geometry.computeVertexNormals();
+    });
+};
+
 export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
     if (!vrm.humanoid) return;
 
@@ -239,16 +586,16 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
         }
     };
 
-    setDesired(VRMHumanBoneName.Hips, 1.0, 1.0, params.hipSize);
+    setDesired(VRMHumanBoneName.Hips, 1.0, 1.0, 1.0);
     setDesired(VRMHumanBoneName.Spine, params.waistWidth, params.torsoHeight, params.stomachSize);
 
     const chestWidth = params.shoulderWidth;
 
     if (hasUpperChest) {
         setDesired(VRMHumanBoneName.Chest, chestWidth, 1.0, params.stomachSize);
-        setDesired(VRMHumanBoneName.UpperChest, chestWidth, 1.0, params.chestSize);
+        setDesired(VRMHumanBoneName.UpperChest, chestWidth, 1.0, 1.0);
     } else {
-        setDesired(VRMHumanBoneName.Chest, chestWidth, 1.0, params.chestSize);
+        setDesired(VRMHumanBoneName.Chest, chestWidth, 1.0, 1.0);
     }
 
     setDesired(VRMHumanBoneName.Neck, params.neckWidth, params.neckHeight, params.neckWidth);
@@ -283,8 +630,7 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
             : (boneName === VRMHumanBoneName.Chest);
 
         if (isChestTarget) {
-            const zOffset = (params.chestSize - 1.0) * -0.05;
-            node.position.z = node.userData.initialZ + zOffset;
+            node.position.z = node.userData.initialZ;
         }
 
         const currentDesired = desiredScales[boneName] || new THREE.Vector3(1, 1, 1);
@@ -411,6 +757,10 @@ export const applyBodyParameters = (vrm: VRM, params: BodyParameters) => {
         setDesired(finger as VRMHumanBoneName, params.fingerSize, params.fingerSize, params.fingerSize);
         applyParams(finger as VRMHumanBoneName, parent as VRMHumanBoneName);
     });
+
+    vrm.scene.updateMatrixWorld(true);
+    applyFrontChestDeformation(vrm, chestBone, params.chestSize);
+    applyRearHipDeformation(vrm, params.hipSize);
 
     updateColliderRadii(vrm, params.headSize);
 
